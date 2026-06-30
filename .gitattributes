@@ -1,0 +1,13 @@
+* text=auto
+*.cs text=auto
+*.json text=auto
+*.md text=auto
+*.props text=auto
+*.sln text=auto
+*.csproj text=auto
+*.ps1 text=auto
+*.psm1 text=auto
+*.yml text=auto
+*.yaml text=auto
+*.editorconfig text=auto
+*.DotSettings text=auto
