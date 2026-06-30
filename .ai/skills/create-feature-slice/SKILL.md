@@ -88,7 +88,6 @@ Tenancy/
   Models/
     Tenant.cs
     TenantMembership.cs
-    TenantSlug.cs
   Validators/
     TenantValidator.cs
   Dtos/

@@ -64,8 +64,8 @@ tests/OpenStore.Api.Tests/Tenancy/Services/TenantServiceTests.cs
 ```
 
 ```text
-src/OpenStore.Api/Tenancy/Models/TenantSlug.cs
-tests/OpenStore.Api.Tests/Tenancy/Models/TenantSlugTests.cs
+src/OpenStore.Api/Tenancy/Validators/TenantValidator.cs
+tests/OpenStore.Api.Tests/Tenancy/Validators/TenantValidatorTests.cs
 ```
 
 ```text

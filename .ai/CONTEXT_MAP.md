@@ -26,6 +26,9 @@ Initial MVP:
 Current state:
 
 - CreateTenant feature implemented.
+- Dev JWT tokens generated via `scripts/create-dev-token.ps1` (HMACSHA256, no token endpoint).
+- Database schema created automatically via `EnsureCreatedAsync()` in Development mode.
+- Postman `baseUrl`: `https://localhost:5001`.
 - One API project `src/OpenStore.Api`, one test project `tests/OpenStore.Api.Tests`.
 - Common infrastructure: `IRepository<T>`, `Repository<T>`, `IUnitOfWork`, `UnitOfWork`, `IEntityService<T>`, `EntityService<T>`, `AppDbContext`.
 - Authentication: JWT Bearer with `ICurrentUserContext` abstraction (scoped, `IsAuthenticated` guard). Token issuing deferred - see `AGENTS.md` section 2.1.
@@ -246,6 +249,15 @@ dotnet build OpenStore.sln
 
 # Run all tests
 dotnet test tests/OpenStore.Api.Tests/
+
+# Run API locally
+dotnet run --project src/OpenStore.Api
+
+# Generate a dev JWT
+scripts/create-dev-token.ps1
+
+# Generate a dev JWT with a specific user ID
+scripts/create-dev-token.ps1 -UserId "00000000-0000-0000-0000-000000000001"
 
 # Add NuGet package
 dotnet add src/OpenStore.Api/OpenStore.Api.csproj package <PackageName>
