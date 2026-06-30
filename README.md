@@ -1,4 +1,4 @@
-# OpenStore
+﻿# OpenStore
 
 OpenStore is a free, open-source, mobile-first, multi-tenant commerce platform.
 
@@ -100,35 +100,35 @@ A role is a permission template. Authorization must ultimately evaluate permissi
 
 ```text
 User
-â”œâ”€â”€ TenantMemberships
-â”‚   â””â”€â”€ Tenant
-â”‚       â”œâ”€â”€ Plan
-â”‚       â”œâ”€â”€ Subscription
-â”‚       â”œâ”€â”€ TenantSettings
-â”‚       â”œâ”€â”€ TenantMemberships
-â”‚       â””â”€â”€ Stores
-â”‚           â”œâ”€â”€ StoreMemberships
-â”‚           â”œâ”€â”€ Categories
-â”‚           â”œâ”€â”€ Products
-â”‚           â”œâ”€â”€ Orders
-â”‚           â”œâ”€â”€ Commissions
-â”‚           â””â”€â”€ Deliveries
-â””â”€â”€ StoreMemberships
+├── TenantMemberships
+│   └── Tenant
+│       ├── Plan
+│       ├── Subscription
+│       ├── TenantSettings
+│       ├── TenantMemberships
+│       └── Stores
+│           ├── StoreMemberships
+│           ├── Categories
+│           ├── Products
+│           ├── Orders
+│           ├── Commissions
+│           └── Deliveries
+└── StoreMemberships
 ```
 
 Example:
 
 ```text
 User: Ian
-â”œâ”€â”€ Tenant: Lionetti Company
-â”‚   â”œâ”€â”€ Tenant role: Owner
-â”‚   â”œâ”€â”€ Store: Ian Clothing
-â”‚   â”‚   â””â”€â”€ Store role: Administrator
-â”‚   â””â”€â”€ Store: Ian Footwear
-â”‚       â””â”€â”€ Store role: Administrator
-â””â”€â”€ Tenant: Pedro's Business
-    â””â”€â”€ Store: South Accessories
-        â””â”€â”€ Store role: Seller
+├── Tenant: Lionetti Company
+│   ├── Tenant role: Owner
+│   ├── Store: Ian Clothing
+│   │   └── Store role: Administrator
+│   └── Store: Ian Footwear
+│       └── Store role: Administrator
+└── Tenant: Pedro's Business
+    └── Store: South Accessories
+        └── Store role: Seller
 ```
 
 ---

@@ -8,15 +8,15 @@ Every external dependency must be isolated behind an application port and an inf
 
 ```text
 Application
-â””â”€â”€ IGeocodingService
+└── IGeocodingService
 
 Infrastructure
-â”œâ”€â”€ GeocodingHttpClient
-â”œâ”€â”€ GeocodingOptions
-â””â”€â”€ GeocodingResponse
+├── GeocodingHttpClient
+├── GeocodingOptions
+└── GeocodingResponse
 
 Tests
-â””â”€â”€ GeocodingHttpClientTests
+└── GeocodingHttpClientTests
 ```
 
 Application interface:
