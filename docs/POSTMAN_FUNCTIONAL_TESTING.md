@@ -30,7 +30,7 @@ dotnet run --project src/OpenStore.Api
 ```
 
 The API starts on `https://localhost:5001`. The database schema is created
-automatically via `Database.EnsureCreatedAsync()` on the first request when
+automatically via `Database.EnsureCreatedAsync()` during application startup when
 `ASPNETCORE_ENVIRONMENT=Development`.
 
 ### 1.3 Generate a dev JWT

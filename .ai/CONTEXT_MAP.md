@@ -31,11 +31,11 @@ Current state:
 - Postman `baseUrl`: `https://localhost:5001`.
 - One API project `src/OpenStore.Api`, one test project `tests/OpenStore.Api.Tests`.
 - Common infrastructure: `IRepository<T>`, `Repository<T>`, `IUnitOfWork`, `UnitOfWork`, `IEntityService<T>`, `EntityService<T>`, `AppDbContext`.
-- Authentication: JWT Bearer with `ICurrentUserContext` abstraction (scoped, `IsAuthenticated` guard). Token issuing deferred - see `AGENTS.md` section 2.1.
+- Authentication: JWT Bearer with `ICurrentUserContext` abstraction (scoped, `IsAuthenticated` guard). Local dev tokens come from `scripts/create-dev-token.ps1`; production token issuing is deferred - see `AGENTS.md` section 2.1.
 - Entity properties use `internal set` for encapsulation.
 - Exception model: single `OpenStoreException` class with `StatusCode` and `ErrorCode`.
 - All automated tests are unit tests using mocks/fakes. Integration tests with `WebApplicationFactory` are deferred.
-- `InternalsVisibleTo` only for `WebApplicationFactory<Program>` - do not widen for testing internal behavior.
+- Do not use `InternalsVisibleTo` or widen visibility for tests unless a concrete design need is explicitly approved.
 
 ---
 
@@ -103,6 +103,7 @@ src/
         UnitOfWork.cs
       Auth/
         CurrentUserContext.cs
+        JwtSettings.cs
       Services/
         EntityService.cs
       Time/
