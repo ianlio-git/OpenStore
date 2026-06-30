@@ -33,7 +33,7 @@ Current state:
 - Common infrastructure: `IRepository<T>`, `Repository<T>`, `IUnitOfWork`, `UnitOfWork`, `IEntityService<T>`, `EntityService<T>`, `AppDbContext`.
 - Authentication: JWT Bearer with `ICurrentUserContext` abstraction (scoped, `IsAuthenticated` guard). Local dev tokens come from `scripts/create-dev-token.ps1`; production token issuing is deferred - see `AGENTS.md` section 2.1.
 - Entity properties use `internal set` for encapsulation.
-- Identity convention for new/refactored persisted entities: `long Id` internal database primary key plus `Guid PublicId` when exposed externally. Current Tenancy entities may still need refactoring from earlier GUID primary keys.
+- Identity convention: `long Id` (database PK, auto-increment) + `Guid PublicId` (public API identifier, unique index). Tenancy entities fully refactored.
 - Exception model: single `OpenStoreException` class with `StatusCode` and `ErrorCode`.
 - All automated tests are unit tests using mocks/fakes. Integration tests with `WebApplicationFactory` are deferred.
 - Do not use `InternalsVisibleTo` or widen visibility for tests unless a concrete design need is explicitly approved.

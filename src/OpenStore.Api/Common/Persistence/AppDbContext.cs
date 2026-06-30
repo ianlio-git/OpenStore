@@ -15,27 +15,34 @@ public sealed class AppDbContext : DbContext
         _dateTimeProvider = dateTimeProvider;
     }
 
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+
+    public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Tenant>(entity =>
         {
             entity.HasKey(t => t.Id);
+            entity.Property(t => t.Id).ValueGeneratedOnAdd();
+            entity.Property(t => t.PublicId).IsRequired();
             entity.Property(t => t.Name).HasMaxLength(200).IsRequired();
             entity.Property(t => t.Slug).HasMaxLength(100).IsRequired();
             entity.HasIndex(t => t.Slug).IsUnique();
+            entity.HasIndex(t => t.PublicId).IsUnique();
         });
 
         modelBuilder.Entity<TenantMembership>(entity =>
         {
             entity.HasKey(tm => tm.Id);
+            entity.Property(tm => tm.Id).ValueGeneratedOnAdd();
+            entity.Property(tm => tm.PublicId).IsRequired();
             entity.Property(tm => tm.Role).HasMaxLength(50).IsRequired();
             entity.HasIndex(tm => new { tm.TenantId, tm.UserId }).IsUnique();
+
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(tm => tm.TenantId).OnDelete(DeleteBehavior.Restrict);
         });
     }
-
-    public DbSet<Tenant> Tenants => Set<Tenant>();
-
-    public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -50,9 +57,9 @@ public sealed class AppDbContext : DbContext
             switch (entry.State)
             {
                 case EntityState.Added:
-                    if (baseEntity.Id == Guid.Empty)
+                    if (baseEntity.PublicId == Guid.Empty)
                     {
-                        baseEntity.Id = Guid.NewGuid();
+                        baseEntity.PublicId = Guid.NewGuid();
                     }
 
                     baseEntity.CreatedAtUtc = utcNow;

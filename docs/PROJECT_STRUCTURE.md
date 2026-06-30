@@ -61,7 +61,6 @@ OpenStore/
         Models/
           Tenant.cs
           TenantMembership.cs
-          TenantSlug.cs
         Validators/
           TenantValidator.cs
         Dtos/
@@ -76,8 +75,6 @@ OpenStore/
           TenantsControllerTests.cs
         Services/
           TenantServiceTests.cs
-        Models/
-          TenantSlugTests.cs
         Validators/
           TenantValidatorTests.cs
 
@@ -259,7 +256,6 @@ src/
       Models/
         Tenant.cs
         TenantMembership.cs
-        TenantSlug.cs
       Validators/
         TenantValidator.cs
       Dtos/
@@ -312,8 +308,7 @@ tests/OpenStore.Api.Tests/Tenancy/Controllers/TenantsControllerTests.cs
 ```
 
 ```text
-src/OpenStore.Api/Tenancy/Models/TenantSlug.cs
-tests/OpenStore.Api.Tests/Tenancy/Models/TenantSlugTests.cs
+(Removed — slug validation folded into TenantValidator, no value object needed)
 ```
 
 ```text
@@ -354,7 +349,7 @@ Use the simple initial structure:
 - Tenancy/Controllers for TenantsController.
 - Tenancy/Services for TenantService.
 - Tenancy/Contracts for ITenantService.
-- Tenancy/Models for Tenant, TenantMembership, and TenantSlug.
+- Tenancy/Models for Tenant and TenantMembership.
 - Tenancy/Validators for TenantValidator.
 - Tenancy/Dtos for CreateTenantRequest and CreateTenantResponse.
 - Tests mirror the source structure under tests/OpenStore.Api.Tests.

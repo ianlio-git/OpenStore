@@ -7,8 +7,7 @@ public sealed class TenantNameValidationException : OpenStoreException
 {
     private const string Code = "tenancy.invalid_tenant_name";
 
-    public TenantNameValidationException(string detail)
-        : base(Code, StatusCodes.Status400BadRequest, detail)
+    public TenantNameValidationException(string detail) : base(Code, StatusCodes.Status400BadRequest, detail)
     {
     }
 }

@@ -4,7 +4,7 @@ namespace OpenStore.Api.Common.Contracts;
 
 public interface IRepository<TEntity> where TEntity : class
 {
-    Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<TEntity?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<TEntity>> GetAllAsync(CancellationToken cancellationToken = default);
 

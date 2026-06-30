@@ -1,4 +1,3 @@
-﻿using System.Linq.Expressions;
 using NSubstitute;
 using OpenStore.Api.Common.Contracts;
 using OpenStore.Api.Tenancy.Contracts;
@@ -15,7 +14,8 @@ public sealed class TenantServiceTests
     private readonly IRepository<TenantMembership> _membershipRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserContext _currentUser;
-    private readonly ITenantService _service;
+    private readonly TenantService _service;
+
 
     public TenantServiceTests()
     {
@@ -43,20 +43,38 @@ public sealed class TenantServiceTests
 
         _currentUser.GetRequiredUserId().Returns(userId);
 
-        _tenantRepository.AnyAsync(Arg.Any<Expression<Func<Tenant, bool>>>(), Arg.Any<CancellationToken>())
+        _tenantRepository.AnyAsync(Arg.Any<System.Linq.Expressions.Expression<Func<Tenant, bool>>>(), Arg.Any<CancellationToken>())
             .Returns(false);
+
+        Tenant? capturedTenant = null;
+
+        _tenantRepository.When(x => x.Add(Arg.Any<Tenant>()))
+            .Do(callInfo => capturedTenant = callInfo.Arg<Tenant>());
+
+        _unitOfWork.When(x => x.SaveChangesAsync(Arg.Any<CancellationToken>()))
+            .Do(_ =>
+            {
+                if (capturedTenant is not null && capturedTenant.Id == 0)
+                {
+                    capturedTenant.Id = 42;
+                    capturedTenant.PublicId = Guid.NewGuid();
+                }
+            });
 
         CreateTenantResponse result = await _service.CreateAsync(request, TestContext.Current.CancellationToken);
 
-        Assert.NotEqual(Guid.Empty, result.Id);
+        Assert.NotEqual(Guid.Empty, result.PublicId);
         Assert.Equal("My Tenant", result.Name);
         Assert.Equal("my-tenant", result.Slug);
 
-        _tenantRepository.Received(1).Add(Arg.Is<Tenant>(t => t.Name == "My Tenant" && t.Slug == "my-tenant" && t.Id != Guid.Empty));
+        _tenantRepository.Received(1).Add(Arg.Is<Tenant>(t => t.Name == "My Tenant" && t.Slug == "my-tenant"));
 
-        _membershipRepository.Received(1).Add(Arg.Is<TenantMembership>(tm => tm.UserId == userId && tm.Role == "Owner" && tm.TenantId != Guid.Empty));
+        _membershipRepository.Received(1).Add(Arg.Is<TenantMembership>(tm =>
+            tm.TenantId == 42 &&
+            tm.UserId == userId &&
+            tm.Role == "Owner"));
 
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(2).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -68,16 +86,13 @@ public sealed class TenantServiceTests
             Slug = "duplicate-slug"
         };
 
-        Guid userId = Guid.NewGuid();
-
-        _currentUser.GetRequiredUserId().Returns(userId);
-
-        _tenantRepository.AnyAsync(Arg.Any<Expression<Func<Tenant, bool>>>(), Arg.Any<CancellationToken>())
+        _tenantRepository.AnyAsync(Arg.Any<System.Linq.Expressions.Expression<Func<Tenant, bool>>>(), Arg.Any<CancellationToken>())
             .Returns(true);
 
         await Assert.ThrowsAsync<DuplicateTenantSlugException>(() => _service.CreateAsync(request, TestContext.Current.CancellationToken));
 
         _tenantRepository.DidNotReceive().Add(Arg.Any<Tenant>());
         _membershipRepository.DidNotReceive().Add(Arg.Any<TenantMembership>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 }

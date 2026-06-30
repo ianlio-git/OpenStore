@@ -74,7 +74,7 @@ public ProductResponse GetProduct(Product? product)
         throw new ProductNotFoundException();
     }
 
-    result = new ProductResponse(product.Id, product.Name, product.Price);
+    result = new ProductResponse(product.PublicId, product.Name, product.Price);
 
     return result;
 }
@@ -92,10 +92,10 @@ public ProductResponse GetProduct(Product? product)
 
     if (!product.IsPublished)
     {
-        return ProductResponse.Hidden(product.Id);
+        return ProductResponse.Hidden(product.PublicId);
     }
 
-    return ProductResponse.Visible(product.Id, product.Name, product.Price);
+    return ProductResponse.Visible(product.PublicId, product.Name, product.Price);
 }
 ```
 
@@ -421,7 +421,7 @@ public static class ProductMapper
     public static ProductResponse ToResponse(Product product)
     {
         ProductResponse result = new(
-            product.Id,
+            product.PublicId,
             product.Name,
             product.Price,
             product.CurrencyCode);

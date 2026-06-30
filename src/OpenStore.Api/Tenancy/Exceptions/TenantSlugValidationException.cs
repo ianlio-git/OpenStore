@@ -7,8 +7,7 @@ public sealed class TenantSlugValidationException : OpenStoreException
 {
     private const string Code = "tenancy.invalid_tenant_slug";
 
-    public TenantSlugValidationException(string detail)
-        : base(Code, StatusCodes.Status400BadRequest, detail)
+    public TenantSlugValidationException(string detail) : base(Code, StatusCodes.Status400BadRequest, detail)
     {
     }
 }

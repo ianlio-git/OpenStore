@@ -29,7 +29,7 @@ public sealed class TenantsControllerTests
 
         CreateTenantResponse expected = new()
         {
-            Id = Guid.NewGuid(),
+            PublicId = Guid.NewGuid(),
             Name = "Test Tenant",
             Slug = "test-tenant",
             CreatedAtUtc = DateTimeOffset.UtcNow
@@ -44,7 +44,7 @@ public sealed class TenantsControllerTests
         Assert.Equal(nameof(TenantsController.Create), createdResult.ActionName);
 
         CreateTenantResponse? body = Assert.IsType<CreateTenantResponse>(createdResult.Value);
-        Assert.Equal(expected.Id, body.Id);
+        Assert.Equal(expected.PublicId, body.PublicId);
         Assert.Equal(expected.Name, body.Name);
         Assert.Equal(expected.Slug, body.Slug);
     }

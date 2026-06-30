@@ -439,7 +439,6 @@ Tenancy/
   Models/
     Tenant.cs
     TenantMembership.cs
-    TenantSlug.cs
   Dtos/
     CreateTenantRequest.cs
     CreateTenantResponse.cs

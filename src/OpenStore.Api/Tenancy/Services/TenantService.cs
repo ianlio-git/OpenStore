@@ -31,19 +31,22 @@ public sealed class TenantService : ITenantService
 
         await TenantValidator.ValidateSlugIsAvailableAsync(normalizedSlug, _tenantRepository, cancellationToken);
 
+        Guid userId = _currentUser.GetRequiredUserId();
+
         Tenant tenant = new()
         {
-            Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
             Slug = normalizedSlug
         };
 
         _tenantRepository.Add(tenant);
 
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
         TenantMembership membership = new()
         {
             TenantId = tenant.Id,
-            UserId = _currentUser.GetRequiredUserId(),
+            UserId = userId,
             Role = "Owner"
         };
 
@@ -51,14 +54,14 @@ public sealed class TenantService : ITenantService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        CreateTenantResponse result = new()
+        CreateTenantResponse response = new()
         {
-            Id = tenant.Id,
+            PublicId = tenant.PublicId,
             Name = tenant.Name,
             Slug = tenant.Slug,
             CreatedAtUtc = tenant.CreatedAtUtc
         };
 
-        return result;
+        return response;
     }
 }

@@ -43,12 +43,12 @@
                   "",
                   "pm.test(\"response has tenant id\", function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.id).to.be.a(\"string\");",
-                  "    pm.expect(body.name).to.eql(\"My Store\");",
-                  "    pm.expect(body.slug).to.eql(\"my-store\");",
-                  "});",
-                  "",
-                  "pm.environment.set(\"tenantId\", pm.response.json().id);"
+                    "    pm.expect(body.publicId).to.be.a(\"string\");",
+                    "    pm.expect(body.name).to.eql(\"My Store\");",
+                    "    pm.expect(body.slug).to.eql(\"my-store\");",
+                    "});",
+                    "",
+                    "pm.environment.set(\"tenantPublicId\", pm.response.json().publicId);"
                 ],
                 "type": "text/javascript"
               }

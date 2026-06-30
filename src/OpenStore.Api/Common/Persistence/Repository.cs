@@ -4,8 +4,7 @@ using OpenStore.Api.Common.Contracts;
 
 namespace OpenStore.Api.Common.Persistence;
 
-public sealed class Repository<TEntity> : IRepository<TEntity>
-    where TEntity : class
+public sealed class Repository<TEntity> : IRepository<TEntity> where TEntity : class
 {
     private readonly DbSet<TEntity> _set;
 
@@ -14,7 +13,7 @@ public sealed class Repository<TEntity> : IRepository<TEntity>
         _set = context.Set<TEntity>();
     }
 
-    public async Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<TEntity?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         TEntity? result = await _set.FindAsync([id], cancellationToken);
 
@@ -42,18 +41,9 @@ public sealed class Repository<TEntity> : IRepository<TEntity>
         return result;
     }
 
-    public void Add(TEntity entity)
-    {
-        _set.Add(entity);
-    }
+    public void Add(TEntity entity) => _set.Add(entity);
 
-    public void Update(TEntity entity)
-    {
-        _set.Update(entity);
-    }
+    public void Update(TEntity entity) => _set.Update(entity);
 
-    public void Remove(TEntity entity)
-    {
-        _set.Remove(entity);
-    }
+    public void Remove(TEntity entity) => _set.Remove(entity);
 }

@@ -13,7 +13,7 @@ public sealed class EntityService<TEntity> : IEntityService<TEntity> where TEnti
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<TEntity?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         TEntity? result = await _repository.GetByIdAsync(id, cancellationToken);
 

@@ -215,9 +215,8 @@ MethodName_State_ExpectedResult
 Examples:
 
 ```csharp
-CreateAsync_ValidRequest_CreatesTenant
+CreateAsync_ValidRequest_CreatesTenantAndMembership
 CreateAsync_DuplicateSlug_ThrowsDuplicateTenantSlugException
-CreateAsync_AuthenticatedUser_CreatesOwnerMembership
 ```
 
 ---

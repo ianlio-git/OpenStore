@@ -18,10 +18,10 @@ public sealed class TenantsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateTenantRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create([FromBody] CreateTenantRequest request, CancellationToken cancellationToken)
     {
         CreateTenantResponse result = await _tenantService.CreateAsync(request, cancellationToken);
 
-        return CreatedAtAction(nameof(Create), new { id = result.Id }, result);
+        return CreatedAtAction(nameof(Create), new { id = result.PublicId }, result);
     }
 }

@@ -1,4 +1,4 @@
-﻿# OpenStore
+# OpenStore
 
 OpenStore is a free, open-source, mobile-first, multi-tenant commerce platform.
 
@@ -267,7 +267,9 @@ public interface ITenantEntity
 
 public abstract class BaseEntity
 {
-    public Guid Id { get; internal set; }
+    public long Id { get; internal set; }
+
+    public Guid PublicId { get; internal set; }
 
     public DateTimeOffset CreatedAtUtc { get; internal set; }
 
@@ -415,7 +417,6 @@ OpenStore/
         Models/
           Tenant.cs
           TenantMembership.cs
-          TenantSlug.cs
         Validators/
           TenantValidator.cs
         Dtos/
@@ -430,8 +431,6 @@ OpenStore/
           TenantsControllerTests.cs
         Services/
           TenantServiceTests.cs
-        Models/
-          TenantSlugTests.cs
         Validators/
           TenantValidatorTests.cs
 

@@ -2,7 +2,7 @@ namespace OpenStore.Api.Tenancy.Dtos;
 
 public sealed record CreateTenantResponse
 {
-    public Guid Id { get; init; }
+    public Guid PublicId { get; init; }
 
     public string Name { get; init; } = string.Empty;
 

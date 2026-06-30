@@ -1,4 +1,4 @@
-﻿# Postman Functional Testing
+# Postman Functional Testing
 
 OpenStore does not require a frontend during the early MVP.
 
@@ -143,7 +143,7 @@ Use environment variables instead of hardcoded values:
 |---|---|
 | `baseUrl` | API base URL, for example `https://localhost:5001`. |
 | `accessToken` | JWT access token for authenticated requests. |
-| `tenantId` | Current tenant ID when needed by routes or assertions. |
+| `tenantPublicId` | Current tenant public ID when needed by routes or assertions. |
 | `storeId` | Current store ID when needed by routes or assertions. |
 | `productId` | Current product ID for follow-up requests. |
 | `storeSlug` | Public store slug. |
@@ -181,9 +181,9 @@ pm.test("status code is expected", function () {
     pm.response.to.have.status(201);
 });
 
-pm.test("response has id", function () {
+pm.test("response has publicId", function () {
     const body = pm.response.json();
-    pm.expect(body.id).to.be.a("string");
+    pm.expect(body.publicId).to.be.a("string");
 });
 ```
 
@@ -191,7 +191,7 @@ Use scripts to save IDs only when follow-up requests need them:
 
 ```javascript
 const body = pm.response.json();
-pm.environment.set("tenantId", body.id);
+pm.environment.set("tenantPublicId", body.publicId);
 ```
 
 Keep scripts simple. Complex behavior belongs in unit-tested services or in explicit future integration tests when requested.
