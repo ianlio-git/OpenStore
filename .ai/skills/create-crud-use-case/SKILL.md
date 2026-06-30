@@ -1,4 +1,4 @@
-﻿---
+---
 name: create-crud-use-case
 description: Implement or modify one OpenStore create, read, update, delete, deactivate, archive, or query use case inside an existing bounded context. Use when a request needs endpoint, application service, contracts, validation, persistence, authorization, tenant or store isolation, typed exceptions, OpenAPI metadata, and tests.
 ---
@@ -71,6 +71,7 @@ tests/
 - Typed exceptions.
 - No inline repeated exception messages.
 - No EF entities returned by the API.
+- Persisted entities use `long Id` internally; expose `Guid PublicId`, slugs, or other public identifiers through API contracts when needed.
 
 ## Completion report
 

@@ -1,4 +1,4 @@
-﻿---
+---
 name: create-feature-slice
 description: Implement the first or next complete OpenStore vertical feature slice inside the modular monolith. Use for MVP work such as register user, create tenant, create store, create product, publish catalog, public catalog read, WhatsApp cart validation, invitations, roles, or any end-to-end feature that needs API, application service, domain model, persistence, tenant/store isolation, authorization, typed exceptions, OpenAPI, tests, and Postman functional requests without creating a new microservice or extra API project.
 ---
@@ -120,6 +120,8 @@ Use one `AppDbContext` at the beginning. Put simple EF mappings directly in `App
 - Do not create separate Domain/Application/Infrastructure projects at the beginning.
 - Do not put business logic in controllers.
 - Do not expose persistence entities from APIs.
+- Identity rule: persisted entities use `long Id` internally; expose `Guid PublicId`, slugs, or other public identifiers through APIs when needed.
+- Database scripts, migrations, and EF mappings must not use GUID primary keys by default.
 - Do not add a mapper, mediator, validator, ORM, broker, or test framework without an approved ADR.
 - Follow one-return, null-style, member-order, typed-exception, and deterministic-time rules.
 - Keep all files for the feature on the same feature branch.

@@ -1,4 +1,4 @@
-﻿# AGENTS.md
+# AGENTS.md
 
 This file defines mandatory instructions for every AI coding assistant working in the OpenStore repository.
 
@@ -188,6 +188,19 @@ Do not mix visibility levels randomly.
 - Public queries must expose only published and discoverable fields.
 - `IgnoreQueryFilters()` must be followed by an explicit safe predicate in the same query.
 - Integration events containing private data must include `TenantId`.
+
+
+### 4.1 Persistent identity rules
+
+- Persisted entities use `long Id` as the internal database primary key by default.
+- Public/API identifiers use `Guid PublicId` when an entity needs an external opaque identifier.
+- Internal numeric IDs are for joins, foreign keys, indexing, and database work.
+- Public IDs are for API responses, URLs, Postman examples, and integration boundaries.
+- Do not expose internal numeric IDs through public API contracts unless the endpoint is explicitly internal/admin-only.
+- Do not use GUID primary keys by default.
+- Do not treat GUIDs as secrets or authorization checks.
+- Tenant and store foreign keys use internal numeric IDs and are assigned server-side.
+- Database scripts, migrations, and EF mappings must follow the same identity split.
 
 ---
 

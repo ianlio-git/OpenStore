@@ -1,4 +1,4 @@
-﻿# Infrastructure
+# Infrastructure
 
 OpenStore infrastructure must be boring, explicit, observable, reproducible, and secure by default.
 
@@ -233,3 +233,18 @@ Before production, OpenStore must have:
 Use `.ai/checklists/infrastructure-change.md` for infrastructure-impacting changes.
 
 An infrastructure change is complete only when it is reproducible, documented, observable, secure, and tested at the appropriate level.
+
+---
+
+## Database scripts and identity
+
+When migrations or SQL scripts are introduced, they must match the entity identity convention:
+
+- Internal primary keys use `bigint identity`.
+- Public identifiers use `uuid` with a unique constraint when the entity is exposed externally.
+- Foreign keys use internal numeric IDs.
+- Scripts must create indexes for foreign keys, public identifiers, slugs, and uniqueness rules.
+- Scripts must not use GUID primary keys by default.
+- Scripts must not expose internal numeric IDs as public API identifiers.
+
+During the early MVP, Development schema may be created from EF models with `EnsureCreatedAsync()`. This is temporary and must not become the production schema management strategy.

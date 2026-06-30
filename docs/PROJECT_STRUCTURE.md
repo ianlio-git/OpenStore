@@ -1,4 +1,4 @@
-﻿# Project Structure
+# Project Structure
 
 This document explains the initial OpenStore structure.
 
@@ -368,3 +368,16 @@ Use IEntityService<TEntity> and EntityService<TEntity> for reusable CRUD.
 Use TenantService for CreateTenant because it has business rules beyond CRUD.
 Show the planned file structure before creating files.
 ```
+
+---
+
+## Entity identity convention
+
+Every new persisted model should follow the shared identity convention unless there is an explicit documented exception:
+
+```text
+Id        long internal database primary key
+PublicId  Guid public opaque identifier when exposed externally
+```
+
+Foreign keys use internal numeric IDs. Public API contracts use `PublicId`, slugs, or other public business identifiers. Database scripts, migrations, and EF mappings must preserve this split.
