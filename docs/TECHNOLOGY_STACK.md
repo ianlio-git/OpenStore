@@ -1,0 +1,171 @@
+﻿# Technology Stack
+
+This document is the authoritative list of approved technologies for OpenStore.
+
+A technology not listed here requires an ADR before introduction.
+
+Infrastructure operating rules are maintained in [`docs/INFRASTRUCTURE.md`](INFRASTRUCTURE.md).
+
+---
+
+## Backend platform
+
+| Area | Technology | Decision |
+|---|---|---|
+| Runtime | .NET 10 | Required |
+| Language | C# | Required |
+| HTTP API | ASP.NET Core Controllers (`ControllerBase`) | Required |
+| ORM | Entity Framework Core | Required |
+| Relational database | PostgreSQL | Required |
+| PostgreSQL provider | Npgsql | Required |
+| API description | OpenAPI | Required |
+| Gateway | YARP | Required when services are publicly routed |
+| Local orchestration | .NET Aspire AppHost | Preferred |
+| Self-hosted deployment | Docker and Compose | Future deployment path, not required for the current MVP test workflow |
+| Observability | OpenTelemetry | Required |
+| Logging | Microsoft.Extensions.Logging structured logging | Required |
+
+---
+
+## Application architecture
+
+OpenStore uses:
+
+- Bounded contexts.
+- Vertical slices inside each service.
+- Explicit application services or use-case handlers.
+- Dependency injection.
+- Explicit mapping.
+- Typed exceptions.
+- Explicit validation helpers or validators.
+- Database per service.
+- Integration events only when asynchronous communication is justified.
+
+OpenStore does not use by default:
+
+- Generic repositories.
+- AutoMapper.
+- MediatR.
+- FluentValidation.
+- Service locator.
+- Lazy loading.
+- Shared domain models between services.
+
+These libraries or patterns may only be introduced through an ADR.
+
+---
+
+## Messaging
+
+Initial implementation:
+
+- No message broker until a business flow requires asynchronous communication.
+
+When messaging is introduced:
+
+- RabbitMQ.
+- Official `RabbitMQ.Client` .NET library.
+- Project-owned messaging abstractions.
+- Outbox pattern for reliable publication when required.
+- Inbox or idempotency storage for consumers when required.
+- Versioned immutable integration event contracts.
+
+MassTransit is not part of the default stack.
+
+---
+
+## External HTTP integrations
+
+- `IHttpClientFactory`.
+- Typed `HttpClient`.
+- `Microsoft.Extensions.Http.Resilience` when retries, timeouts, or circuit breaking are required.
+- Options pattern.
+- Startup options validation.
+- WireMock.Net tests.
+- Typed integration exceptions.
+
+---
+
+## Authentication and authorization
+
+MVP implementation:
+
+- JWT Bearer authentication scheme registered (`AddJwtBearer()`).
+- Token issuing (login, register, refresh tokens) is deferred to a future Identity feature.
+- `ICurrentUserContext` resolves the authenticated user's `sub` claim from the bearer token.
+- The `[Authorize]` attribute protects private endpoints.
+- Policy-based authorization will be added when roles and permissions are defined.
+- Database-backed tenant and store permissions are planned.
+
+MVP operational notes:
+
+- Production scheme is JWT Bearer, but no token endpoint exists yet.
+- In local development, requests without a valid bearer token receive 401 Unauthorized.
+- Postman requests will require a valid bearer token once Identity/token issuing is implemented.
+- Integration tests use a custom test authentication handler - never fake auth in production code.
+- Future optional provider: Keycloak through OpenID Connect.
+
+Authorization rules must remain in the backend even when the frontend hides unavailable actions.
+
+---
+
+## Frontend
+
+| Area | Technology |
+|---|---|
+| Framework | Angular |
+| Design | Mobile-first responsive UI |
+| Installation | PWA |
+| Public rendering | SSR or prerendering |
+| Cart storage | Local storage initially; IndexedDB when justified |
+| API access | Generated or explicit typed HTTP clients |
+| State management | Angular services/signals initially |
+
+A large state-management dependency must not be introduced until application complexity requires it.
+
+---
+
+## Testing
+
+| Test concern | Technology |
+|---|---|
+| Unit tests | xUnit.net v3 |
+| Substitutes | NSubstitute |
+| Assertions | Built-in xUnit assertions |
+| Controller tests | Direct controller instantiation with substituted service contracts |
+| Service tests | NSubstitute against repositories, Unit of Work, current-user context, time providers, and clients |
+| Integration tests | Deferred until explicitly requested; no full-pipeline host, temporary database, or container dependency by default |
+| External HTTP adapter tests | WireMock.Net |
+| Architecture tests | NetArchTest or custom reflection tests after ADR approval |
+| Coverage | Microsoft code coverage tooling |
+
+Do not use EF Core InMemory as a shortcut for persistence behavior. If relational behavior must be tested, ask for an explicit integration-test task first.
+
+---
+
+## Time abstraction
+
+Application and domain code depend on:
+
+```csharp
+public interface IDateTimeProvider
+{
+    DateTimeOffset UtcNow { get; }
+}
+```
+
+Infrastructure implements the system provider.
+
+Tests use a fake provider with explicitly controlled time.
+
+---
+
+## Package version policy
+
+- Package versions are centrally managed.
+- Versions are pinned.
+- Lock files are committed where supported.
+- Updates are performed intentionally.
+- Major-version upgrades require release-note review.
+- Packages with incompatible licensing are not introduced.
+- Security updates are prioritized.

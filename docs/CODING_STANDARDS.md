@@ -1,0 +1,486 @@
+﻿# Coding Standards
+
+These standards are mandatory for backend code.
+
+---
+
+## 1. General language rules
+
+- All code and technical text must be written in English.
+- Nullable reference types must be enabled.
+- Classes are `sealed` by default.
+- Use file-scoped namespaces.
+- Use `record` for immutable requests, responses, value messages, and integration events.
+- Use `required` for required initialization when appropriate.
+- Use `Guid` identifiers unless a bounded context documents another choice.
+- Use `DateTimeOffset` for timestamps.
+- Persist timestamps in UTC.
+- Use `decimal` for monetary values.
+- Store an ISO currency code separately.
+- Async method names end with `Async`.
+- Async methods accept a `CancellationToken` when cancellation is meaningful.
+- Never use `.Result`, `.Wait()`, or fire-and-forget tasks.
+
+---
+
+## 2. Single-exit methods
+
+Every non-void method must have exactly one return statement.
+
+Approved:
+
+```csharp
+public ProductResponse GetProduct(Product? product)
+{
+    ProductResponse result;
+
+    if (product is null)
+    {
+        throw new ProductNotFoundException();
+    }
+
+    result = new ProductResponse(product.Id, product.Name, product.Price);
+
+    return result;
+}
+```
+
+Not approved:
+
+```csharp
+public ProductResponse GetProduct(Product? product)
+{
+    if (product is null)
+    {
+        throw new ProductNotFoundException();
+    }
+
+    if (!product.IsPublished)
+    {
+        return ProductResponse.Hidden(product.Id);
+    }
+
+    return ProductResponse.Visible(product.Id, product.Name, product.Price);
+}
+```
+
+Approved refactoring:
+
+```csharp
+public ProductResponse GetProduct(Product product)
+{
+    ProductResponse result = product.IsPublished
+        ? CreateVisibleResponse(product)
+        : CreateHiddenResponse(product);
+
+    return result;
+}
+```
+
+Rules:
+
+- Do not use guard-clause early returns.
+- Throwing a typed exception is allowed because it does not return a result.
+- Extract private methods instead of adding deep nesting.
+- A method returns one coherent result type.
+- Do not return `null` to represent failure when a typed exception or explicit result is more appropriate.
+
+---
+
+## 3. Null style
+
+Approved:
+
+```csharp
+if (product is null)
+{
+    throw new ProductNotFoundException(productId);
+}
+
+if (product.Description is not null)
+{
+    description = product.Description.Trim();
+}
+```
+
+Forbidden:
+
+```csharp
+if (product == null)
+{
+}
+
+if (product != null)
+{
+}
+```
+
+Null assignments are allowed only when the model explicitly permits absence.
+
+Do not suppress nullable warnings with `!` unless the invariant is guaranteed and documented.
+
+---
+
+## 4. LINQ
+
+Prefer LINQ for:
+
+- Filtering.
+- Projection.
+- Ordering.
+- Grouping.
+- Aggregation.
+- Set operations.
+- Dictionary creation.
+- Database queries.
+
+Approved:
+
+```csharp
+IReadOnlyCollection<ProductResponse> result = products
+    .Where(product => product.IsPublished)
+    .OrderBy(product => product.Name)
+    .Select(ProductMapper.ToResponse)
+    .ToArray();
+```
+
+Avoid LINQ when:
+
+- The operation relies on multiple side effects.
+- A state machine is being executed.
+- The expression hides important control flow.
+- It causes repeated enumeration.
+- It cannot be translated safely by EF Core.
+
+Do not place network calls inside LINQ projections.
+
+---
+
+## 5. Member order
+
+Use this exact order:
+
+1. Constants.
+2. Static fields.
+3. Instance fields.
+4. Constructors.
+5. Properties.
+6. Private methods.
+7. Protected methods.
+8. Public methods.
+
+Example:
+
+```csharp
+public sealed class ProductService
+{
+    private const int MaximumNameLength = 200;
+
+    private readonly IProductRepository _productRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
+
+    public ProductService(
+        IProductRepository productRepository,
+        IDateTimeProvider dateTimeProvider)
+    {
+        _productRepository = productRepository;
+        _dateTimeProvider = dateTimeProvider;
+    }
+
+    public string ServiceName => nameof(ProductService);
+
+    private static string NormalizeName(string name)
+    {
+        string result = name.Trim();
+
+        return result;
+    }
+
+    protected void ValidateProduct(Product product)
+    {
+        ProductValidationHelper.Validate(product);
+    }
+
+    public async Task<ProductResponse> CreateAsync(
+        CreateProductRequest request,
+        CancellationToken cancellationToken)
+    {
+        // Implementation.
+    }
+}
+```
+
+A `sealed` class normally has no protected members. The visibility ordering still applies when inheritance is explicitly justified.
+
+---
+
+## 6. Visibility And Testability
+
+Use the narrowest visibility that still expresses the class contract.
+
+- Public members are for API contracts, dependency injection entry points, framework entry points, or behavior intentionally exposed by the type.
+- Private members are for implementation helpers.
+- Do not make methods public only because a unit test needs to call them.
+- Do not test private methods directly.
+- If behavior needs substitution in tests, extract a focused interface and inject it.
+- Unit tests should mock or fake dependencies through interfaces and verify observable behavior through the public contract.
+
+Good:
+
+```csharp
+public sealed class TenantService : ITenantService
+{
+    private readonly IRepository<Tenant> tenantRepository;
+
+    public TenantService(IRepository<Tenant> tenantRepository)
+    {
+        this.tenantRepository = tenantRepository;
+    }
+
+    public async Task<CreateTenantResponse> CreateAsync(
+        CreateTenantRequest request,
+        CancellationToken cancellationToken)
+    {
+        string slug = NormalizeSlug(request.Slug);
+        // business behavior here
+    }
+
+    private static string NormalizeSlug(string slug)
+    {
+        string result = slug.Trim().ToLowerInvariant();
+
+        return result;
+    }
+}
+```
+
+Bad:
+
+```csharp
+public string NormalizeSlug(string slug)
+{
+    string result = slug.Trim().ToLowerInvariant();
+
+    return result;
+}
+```
+
+The bad example exposes implementation detail only for testing. Test `CreateAsync` behavior instead.
+
+---
+
+## 7. Validation
+
+Validation may be implemented with:
+
+- A focused validator class.
+- A focused static validation helper.
+- Domain factory validation.
+- Value object construction.
+- Database constraint validation.
+
+Approved names:
+
+- `ProductValidator`
+- `ProductValidationHelper`
+- `StoreSlugValidator`
+- `MoneyValidationHelper`
+
+Avoid:
+
+- `Utils`
+- `CommonHelper`
+- `ValidationManager`
+- Giant helper classes spanning unrelated domains.
+
+Validation helpers must:
+
+- Be cohesive.
+- Be deterministic.
+- Avoid database and network calls.
+- Throw typed validation exceptions or return one explicit validation result.
+- Have unit tests.
+
+---
+
+## 8. Date and time
+
+Business code must depend on:
+
+```csharp
+public interface IDateTimeProvider
+{
+    DateTimeOffset UtcNow { get; }
+}
+```
+
+System implementation:
+
+```csharp
+public sealed class SystemDateTimeProvider : IDateTimeProvider
+{
+    public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
+}
+```
+
+Test implementation:
+
+```csharp
+public sealed class FakeDateTimeProvider : IDateTimeProvider
+{
+    public FakeDateTimeProvider(DateTimeOffset utcNow)
+    {
+        UtcNow = utcNow;
+    }
+
+    public DateTimeOffset UtcNow { get; private set; }
+
+    public void Advance(TimeSpan duration)
+    {
+        UtcNow = UtcNow.Add(duration);
+    }
+}
+```
+
+Do not call the system clock directly outside the system provider.
+
+---
+
+## 9. Exceptions
+
+Use project exception classes.
+
+Approved:
+
+```csharp
+throw new ProductNotFoundException(productId);
+```
+
+Forbidden:
+
+```csharp
+throw new InvalidOperationException(
+    $"Product {productId} was not found.");
+```
+
+The exception class owns:
+
+- Default message.
+- Error code.
+- Context properties.
+- HTTP mapping category.
+
+See `EXCEPTION_HANDLING.md`.
+
+---
+
+## 10. Mapping
+
+Use explicit mapping methods.
+
+Approved:
+
+```csharp
+public static class ProductMapper
+{
+    public static ProductResponse ToResponse(Product product)
+    {
+        ProductResponse result = new(
+            product.Id,
+            product.Name,
+            product.Price,
+            product.CurrencyCode);
+
+        return result;
+    }
+}
+```
+
+Do not add a mapping framework by default.
+
+---
+
+## 11. Services
+
+Create a service when logic coordinates:
+
+- Multiple domain objects.
+- Persistence and external ports.
+- A business workflow.
+- A cross-cutting abstraction such as time, storage, or identity.
+- An external provider.
+
+Do not create a service only to wrap one repository method without adding behavior.
+
+Application services must:
+
+- Have one use-case responsibility.
+- Return explicit contracts.
+- Use typed exceptions.
+- Validate tenant and permissions.
+- Be tested.
+
+---
+
+## 12. Code reuse
+
+Favor code reuse when it removes meaningful duplication and improves clarity.
+
+Extract reusable code when:
+
+- A business rule is needed by multiple use cases.
+- A validation rule is repeated.
+- A normalization rule is repeated.
+- A mapping rule is repeated.
+- A tenant or store ownership check is repeated.
+- A permission policy is repeated.
+- External-provider request, response, or error mapping is repeated.
+
+Preferred reusable shapes:
+
+- Value objects for domain concepts.
+- Focused validators or validation helpers.
+- Explicit mapper classes or methods.
+- Authorization policies or permission services.
+- Tenant and store ownership services.
+- External provider adapters.
+- Small application or domain services with one clear responsibility.
+
+Avoid:
+
+- Large generic helpers.
+- `Utils`, `Manager`, or broad shared services.
+- Generic repositories.
+- Shared domain packages across bounded contexts.
+- Abstractions created before there is real duplication or a clear domain concept.
+
+Reusable code must belong to the owning bounded context unless it is truly cross-cutting, such as time, identity, logging, telemetry, or serialization infrastructure.
+
+---
+
+## 13. EF Core
+
+- Use `IEntityTypeConfiguration<TEntity>`.
+- Use `AsNoTracking()` for read-only queries.
+- Use asynchronous query methods.
+- Project to response models in database queries when practical.
+- Avoid unnecessary `Include`.
+- Do not use lazy loading.
+- Use tenant-aware unique indexes.
+- Use database constraints.
+- Keep migrations inside the owning service.
+- Do not mock `DbSet`.
+- Do not use EF Core InMemory for relational integration claims.
+- Use one save operation per consistent local transaction when practical.
+
+---
+
+## 14. Comments and documentation
+
+Comments explain why, not what.
+
+Do not comment obvious code.
+
+Public APIs, integration contracts, unusual algorithms, and security-sensitive decisions require documentation.
+
+TODO comments must include a tracked issue reference.

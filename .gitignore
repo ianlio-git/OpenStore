@@ -1,0 +1,43 @@
+# --- Build outputs ---
+bin/
+obj/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+[Dd]eploy/
+
+# --- Test results ---
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.trx
+
+# --- IDE / Editor ---
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.sln.docstates
+
+# --- Environment / Secrets ---
+.env
+.env.*
+appsettings.*.local.json
+appsettings.Local.json
+secrets.json
+
+# --- Node / frontend (if added later) ---
+node_modules/
+wwwroot/dist/
+
+# --- OS files ---
+Thumbs.db
+Desktop.ini
+
+# --- Logs and temp ---
+*.log
+*.tmp
+*.temp

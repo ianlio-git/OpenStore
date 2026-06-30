@@ -1,0 +1,34 @@
+﻿# Backend Change Checklist
+
+- [ ] Owning service identified.
+- [ ] Feature branch identified or created when Git workflow is requested.
+- [ ] Current working tree checked before editing.
+- [ ] Tenant boundary identified.
+- [ ] Store boundary identified when applicable.
+- [ ] Permission identified.
+- [ ] Request and response contracts defined.
+- [ ] Existing reusable validators, mappers, policies, tenant checks, and integration adapters reviewed.
+- [ ] Repeated logic extracted into cohesive reusable code when it improves clarity.
+- [ ] One-return rule followed.
+- [ ] No early returns.
+- [ ] Null checks use `is null` or `is not null`.
+- [ ] LINQ used where it improves clarity.
+- [ ] Member order is correct.
+- [ ] System time is not called directly.
+- [ ] External dependencies use dedicated interfaces.
+- [ ] Typed exceptions are used.
+- [ ] Exception messages are not repeated inline.
+- [ ] Success test added.
+- [ ] Validation test added.
+- [ ] Authorization test added.
+- [ ] Cross-tenant test added.
+- [ ] Dependency failure test added when applicable.
+- [ ] Build passes.
+- [ ] Unit tests pass.
+- [ ] Integration tests pass.
+- [ ] Postman request added or updated for changed HTTP endpoints.
+- [ ] Postman examples use environment variables and no real secrets.
+- [ ] Documentation and OpenAPI updated.
+- [ ] `.ai/CONTEXT_MAP.md` updated when structure, entry points, standard commands, or important decisions changed.
+- [ ] Commits are small and coherent when commits are requested.
+- [ ] No unrelated files included in commits.

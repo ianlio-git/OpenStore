@@ -1,0 +1,24 @@
+﻿# Infrastructure Change Checklist
+
+- [ ] Owning bounded context or platform component identified.
+- [ ] Local development impact identified.
+- [ ] Test, staging, and production impact identified.
+- [ ] Configuration uses typed options.
+- [ ] Options are validated at startup.
+- [ ] No secrets are committed.
+- [ ] Logs do not expose secrets or unnecessary personal data.
+- [ ] Health checks are added or updated.
+- [ ] OpenTelemetry logs, metrics, or traces are added or preserved.
+- [ ] Database ownership is explicit.
+- [ ] Migrations belong to the owning context.
+- [ ] No cross-service database access introduced.
+- [ ] Messaging is justified by a business workflow.
+- [ ] Outbox/inbox/idempotency considered for messaging.
+- [ ] Docker or Compose changes are reproducible.
+- [ ] Aspire AppHost changes are reproducible.
+- [ ] CI impact identified.
+- [ ] Rollback or recovery path documented when production behavior changes.
+- [ ] Build passes.
+- [ ] Applicable tests pass.
+- [ ] Documentation updated.
+- [ ] `.ai/CONTEXT_MAP.md` updated when structure, entry points, standard commands, or important decisions changed.
