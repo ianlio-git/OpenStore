@@ -28,8 +28,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/tenants",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tenants"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tenants"
+              ]
             }
           },
           "event": [
@@ -43,12 +48,13 @@
                   "",
                   "pm.test(\"response has tenant id\", function () {",
                   "    const body = pm.response.json();",
-                    "    pm.expect(body.publicId).to.be.a(\"string\");",
-                    "    pm.expect(body.name).to.eql(\"My Store\");",
-                    "    pm.expect(body.slug).to.eql(\"my-store\");",
-                    "});",
-                    "",
-                    "pm.environment.set(\"storePublicId\", pm.response.json().publicId);"
+                  "    pm.expect(body.publicId).to.be.a(\"string\");",
+                  "    pm.expect(body.name).to.eql(\"My Store\");",
+                  "    pm.expect(body.slug).to.eql(\"my-store\");",
+                  "});",
+                  "",
+                  "",
+                  "pm.environment.set(\"tenantPublicId\", pm.response.json().publicId);"
                 ],
                 "type": "text/javascript"
               }
@@ -75,8 +81,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/tenants",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tenants"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tenants"
+              ]
             }
           },
           "event": [
@@ -119,8 +130,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/tenants",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tenants"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tenants"
+              ]
             }
           },
           "event": [
@@ -159,8 +175,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/tenants",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tenants"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tenants"
+              ]
             }
           },
           "event": [
@@ -202,8 +223,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
             }
           },
           "event": [
@@ -222,7 +248,10 @@
                   "    pm.expect(body.name).to.eql(\"My Store\");",
                   "    pm.expect(body.slug).to.eql(\"my-store\");",
                   "    pm.expect(body.createdAtUtc).to.be.a(\"string\");",
-                  "});"
+                  "});",
+                  "",
+                  "",
+                  "pm.environment.set(\"storePublicId\", pm.response.json().publicId);"
                 ],
                 "type": "text/javascript"
               }
@@ -249,8 +278,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
             }
           },
           "event": [
@@ -289,8 +323,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
             }
           },
           "event": [
@@ -327,8 +366,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
             }
           },
           "event": [
@@ -357,8 +401,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}"
+              ]
             }
           },
           "event": [
@@ -394,8 +444,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/00000000-0000-0000-0000-000000000000",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "00000000-0000-0000-0000-000000000000"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "00000000-0000-0000-0000-000000000000"
+              ]
             }
           },
           "event": [
@@ -430,8 +486,16 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/tenants/{{tenantPublicId}}/stores",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "tenants", "{{tenantPublicId}}", "stores"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "tenants",
+                "{{tenantPublicId}}",
+                "stores"
+              ]
             }
           },
           "event": [
@@ -473,8 +537,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}"
+              ]
             }
           },
           "event": [
@@ -509,8 +579,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}"
+              ]
             }
           },
           "event": [
@@ -552,8 +628,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "categories"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "categories"
+              ]
             }
           },
           "event": [
@@ -572,6 +655,8 @@
                   "    pm.expect(body.slug).to.eql(\"electronics\");",
                   "    pm.expect(body.createdAtUtc).to.be.a(\"string\");",
                   "});",
+                  "",
+                  "",
                   "",
                   "pm.environment.set(\"categoryPublicId\", pm.response.json().publicId);"
                 ],
@@ -592,8 +677,16 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories/{{categoryPublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "categories", "{{categoryPublicId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "categories",
+                "{{categoryPublicId}}"
+              ]
             }
           },
           "event": [
@@ -629,8 +722,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "categories"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "categories"
+              ]
             }
           },
           "event": [
@@ -672,8 +772,16 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories/{{categoryPublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "categories", "{{categoryPublicId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "categories",
+                "{{categoryPublicId}}"
+              ]
             }
           },
           "event": [
@@ -708,8 +816,16 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories/{{categoryPublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "categories", "{{categoryPublicId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "categories",
+                "{{categoryPublicId}}"
+              ]
             }
           },
           "event": [
@@ -751,8 +867,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "products"
+              ]
             }
           },
           "event": [
@@ -772,6 +895,8 @@
                   "    pm.expect(body.price).to.eql(999.99);",
                   "    pm.expect(body.createdAtUtc).to.be.a(\"string\");",
                   "});",
+                  "",
+                  "",
                   "",
                   "pm.environment.set(\"productPublicId\", pm.response.json().publicId);"
                 ],
@@ -800,8 +925,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "products"
+              ]
             }
           },
           "event": [
@@ -836,8 +968,16 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products/{{productPublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "products", "{{productPublicId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "products",
+                "{{productPublicId}}"
+              ]
             }
           },
           "event": [
@@ -874,8 +1014,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "products"
+              ]
             }
           },
           "event": [
@@ -909,8 +1056,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products?categoryPublicId={{categoryPublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "products"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "products"
+              ],
               "query": [
                 {
                   "key": "categoryPublicId",
@@ -958,8 +1112,16 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products/{{productPublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "products", "{{productPublicId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "products",
+                "{{productPublicId}}"
+              ]
             }
           },
           "event": [
@@ -995,8 +1157,16 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products/{{productPublicId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stores", "{{storePublicId}}", "products", "{{productPublicId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "products",
+                "{{productPublicId}}"
+              ]
             }
           },
           "event": [
