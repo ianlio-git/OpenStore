@@ -138,6 +138,30 @@ OpenStore/
         Persistence/
           StoreConfiguration.cs
 
+      Cart/
+        Controllers/
+          CartsController.cs
+        Services/
+          CartService.cs
+        Contracts/
+          ICartService.cs
+        Models/
+          Cart.cs
+          CartItem.cs
+        Dtos/
+          AddCartItemRequest.cs
+          UpdateCartItemRequest.cs
+          CartItemResponse.cs
+          CartResponse.cs
+        Exceptions/
+          CartNotFoundException.cs
+          CartItemNotFoundException.cs
+          ProductNotFoundException.cs
+          StoreNotFoundException.cs
+        Persistence/
+          CartConfiguration.cs
+          CartItemConfiguration.cs
+
   tests/
     OpenStore.Api.Tests/
       OpenStore.Api.Tests.csproj
@@ -167,6 +191,11 @@ OpenStore/
           StoresControllerTests.cs
         Services/
           StoreServiceTests.cs
+      Cart/
+        Controllers/
+          CartsControllerTests.cs
+        Services/
+          CartServiceTests.cs
 
   postman/
     OpenStore.postman_collection.json

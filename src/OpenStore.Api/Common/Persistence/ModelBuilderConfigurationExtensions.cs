@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OpenStore.Api.Cart.Persistence;
 using OpenStore.Api.Categories.Persistence;
 using OpenStore.Api.Products.Persistence;
 using OpenStore.Api.Stores.Persistence;
@@ -15,5 +16,7 @@ internal static class ModelBuilderConfigurationExtensions
         modelBuilder.ApplyConfiguration(new StoreConfiguration());
         modelBuilder.ApplyConfiguration(new CategoryConfiguration());
         modelBuilder.ApplyConfiguration(new ProductConfiguration());
+        modelBuilder.ApplyConfiguration(new CartConfiguration());
+        modelBuilder.ApplyConfiguration(new CartItemConfiguration());
     }
 }

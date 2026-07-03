@@ -4,7 +4,7 @@ This folder contains the current manual/functional API contract for OpenStore wh
 
 ## Files
 
-- `OpenStore.postman_collection.json`: requests and assertions for Tenancy, Stores, Categories, and Products.
+- `OpenStore.postman_collection.json`: requests and assertions for Tenancy, Stores, Categories, Products, and Cart.
 - `environments/local.postman_environment.json`: local variables used by the collection.
 
 ## Prerequisites
@@ -75,6 +75,8 @@ The collection uses these variables:
 | `storePublicId` | Captured from `Create Store - Success`. |
 | `categoryPublicId` | Captured from `Create Category - Success`. |
 | `productPublicId` | Captured from `Create Product - Success`. |
+| `cartPublicId` | Captured from `Create Cart - Success`. |
+| `cartItemPublicId` | Captured from `Add Item - Success`. |
 
 The success create requests update these variables automatically in their Tests scripts. If a later request returns `404`, first check that the expected variable was captured in the selected Postman environment.
 
@@ -94,10 +96,15 @@ Run the success path first because later requests depend on variables captured b
 10. `Products / Get Product - Success`
 11. `Products / List Products By Store - Success`
 12. `Products / List Products By Category - Success`
-13. `Products / Update Product - Success`
-14. `Categories / Update Category - Success`
-15. `Stores / Update Store - Success`
-16. Run delete requests last: product, category, then store.
+13. `Cart / Create Cart - Success`
+14. `Cart / Add Item - Success`
+15. `Cart / Get Cart - With Items`
+16. `Cart / Update Item Quantity - Success`
+17. `Cart / Remove Item - Success`
+18. `Products / Update Product - Success`
+19. `Categories / Update Category - Success`
+20. `Stores / Update Store - Success`
+21. Run delete requests last: cart items, product, category, then store.
 
 Do not run delete requests in the middle of the sequence unless you want the dependent requests to fail.
 
@@ -127,6 +134,12 @@ Do not run delete requests in the middle of the sequence unless you want the dep
 - `Create Product - With Category` also requires `categoryPublicId`.
 - Get/list/update/delete product requests depend on `storePublicId` and `productPublicId`.
 - `List Products By Category - Success` depends on `categoryPublicId`.
+
+### Cart
+
+- `Create Cart - Success` requires `storePublicId` and captures `cartPublicId`.
+- `Add Item - Success` requires `storePublicId` and `cartPublicId`, and captures `cartItemPublicId`.
+- `Get Cart - Empty`, `Get Cart - With Items`, `Update Item Quantity - Success`, and `Remove Item - Success` depend on `storePublicId`, `cartPublicId`, and `cartItemPublicId`.
 
 ## Resetting Local Data
 
