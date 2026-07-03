@@ -5,7 +5,7 @@ This document explains the initial OpenStore structure.
 OpenStore starts simple: one solution, one API project, one test project, one shared `Common` area, and feature folders.
 
 Do not split code into Domain/Application/Infrastructure projects yet.
-Do not create one `DbContext`, repository, or configuration class per module/entity until the code is large enough to justify it.
+Do not create one `DbContext` or repository per module/entity until the generic structure becomes insufficient. EF entity mappings live in feature-level `Persistence/` configuration classes.
 
 ---
 
@@ -27,29 +27,38 @@ OpenStore/
       Common/
         Contracts/
           IRepository.cs
-          IEntityService.cs
           IUnitOfWork.cs
           ITenantEntity.cs
           ICurrentUserContext.cs
           IDateTimeProvider.cs
+          ICrudService.cs
+          IChildCrudService.cs
 
         Entities/
           BaseEntity.cs
-          BaseTenantEntity.cs
 
         Persistence/
           AppDbContext.cs
           Repository.cs
           UnitOfWork.cs
+          ModelBuilderConfigurationExtensions.cs
+          SoftDeleteModelBuilderExtensions.cs
 
         Services/
-          EntityService.cs
+          EntityServiceBase.cs
 
         Time/
           SystemDateTimeProvider.cs
 
+        Validation/
+          SlugAttribute.cs
+          RequiredGuidAttribute.cs
+
         Errors/
           GlobalExceptionHandler.cs
+          OpenStoreException.cs
+          ModelValidationException.cs
+          ProblemDetailsBuilder.cs
 
       Tenancy/
         Controllers/
@@ -61,22 +70,103 @@ OpenStore/
         Models/
           Tenant.cs
           TenantMembership.cs
-        Validators/
-          TenantValidator.cs
+        Exceptions/
+          DuplicateTenantSlugException.cs
+        Persistence/
+          TenantConfiguration.cs
+          TenantMembershipConfiguration.cs
         Dtos/
           CreateTenantRequest.cs
           CreateTenantResponse.cs
 
+      Categories/
+        Controllers/
+          CategoriesController.cs
+        Services/
+          CategoryService.cs
+        Contracts/
+          ICategoryService.cs
+        Models/
+          Category.cs
+        Dtos/
+          CreateCategoryRequest.cs
+          UpdateCategoryRequest.cs
+          CategoryResponse.cs
+        Exceptions/
+          CategoryNotFoundException.cs
+          DuplicateCategorySlugException.cs
+        Persistence/
+          CategoryConfiguration.cs
+
+      Products/
+        Controllers/
+          ProductsController.cs
+        Services/
+          ProductService.cs
+        Contracts/
+          IProductService.cs
+        Models/
+          Product.cs
+        Dtos/
+          CreateProductRequest.cs
+          UpdateProductRequest.cs
+          ProductResponse.cs
+        Exceptions/
+          ProductNotFoundException.cs
+          DuplicateProductSlugException.cs
+        Persistence/
+          ProductConfiguration.cs
+
+      Stores/
+        Controllers/
+          StoresController.cs
+        Services/
+          StoreService.cs
+        Contracts/
+          IStoreService.cs
+        Models/
+          Store.cs
+        Dtos/
+          CreateStoreRequest.cs
+          StoreResponse.cs
+          UpdateStoreRequest.cs
+        Exceptions/
+          DuplicateStoreSlugException.cs
+          StoreNotFoundException.cs
+          TenantNotFoundException.cs
+          TenantOwnerRequiredException.cs
+        Persistence/
+          StoreConfiguration.cs
+
   tests/
     OpenStore.Api.Tests/
       OpenStore.Api.Tests.csproj
+      Common/
+        Validation/
+          SlugAttributeTests.cs
+          RequiredGuidAttributeTests.cs
+        Services/
+          EntityServiceBaseTests.cs
       Tenancy/
         Controllers/
           TenantsControllerTests.cs
         Services/
           TenantServiceTests.cs
-        Validators/
-          TenantValidatorTests.cs
+      Categories/
+        Controllers/
+          CategoriesControllerTests.cs
+        Services/
+          CategoryServiceTests.cs
+      Products/
+        Controllers/
+          ProductsControllerTests.cs
+        Services/
+          ProductServiceTests.cs
+      Stores/
+        Controllers/
+          StoresControllerTests.cs
+        Services/
+          StoreServiceTests.cs
 
   postman/
     OpenStore.postman_collection.json
@@ -104,24 +194,24 @@ Interfaces only.
 Examples:
 
 - `IRepository.cs`
-- `IEntityService.cs`
 - `IUnitOfWork.cs`
 - `ITenantEntity.cs`
 - `ICurrentUserContext.cs`
 - `IDateTimeProvider.cs`
+- `ICrudService.cs`
+- `IChildCrudService.cs`
 
 If a file starts with `I`, it usually belongs here.
 
 ### `Common/Entities`
 
-Base entity classes only.
+Base entity class only.
 
 Examples:
 
 - `BaseEntity.cs`
-- `BaseTenantEntity.cs`
 
-Do not put interfaces here.
+Do not put other interface types here.
 
 ### `Common/Persistence`
 
@@ -132,9 +222,10 @@ Examples:
 - `AppDbContext.cs`
 - `Repository.cs`
 - `UnitOfWork.cs`
+- `ModelBuilderConfigurationExtensions.cs`
+- `SoftDeleteModelBuilderExtensions.cs`
 
-Start with one `AppDbContext`.
-Do not create `TenancyDbContext`, `CatalogDbContext`, or one context per module yet.
+`AppDbContext.OnModelCreating` must stay small - entity configuration classes live in each feature folder's `Persistence/` subfolder.
 
 ### `Common/Services`
 
@@ -142,10 +233,11 @@ Reusable generic services.
 
 Examples:
 
-- `EntityService.cs`
+- `EntityServiceBase.cs`
 
-Use `EntityService<TEntity>` for simple CRUD behavior.
-Use a feature-specific service, such as `TenantService`, when business rules are more than basic CRUD.
+Use `EntityServiceBase<TEntity>` as an abstract base class for feature-specific services (e.g., `StoreService`) that need persistence helpers (`GetByPublicIdOrThrowAsync`, `ExistsAsync`, `FindAsync`, `Add`, `Update`, `Remove`, `SaveChangesAsync`).
+Concrete services own business operations and mapping.
+There is no generic `IEntityService` - `Repository<T>` is the generic data access abstraction.
 
 ### `Common/Time`
 
@@ -165,8 +257,8 @@ For the first slice, use small responsibility folders:
 - `Services/`: business logic.
 - `Contracts/`: Tenancy-specific interfaces.
 - `Models/`: business/database models and value objects.
-- `Validators/`: Tenancy-specific validation helpers.
-- `Dtos/`: API input/output contracts.
+- `Dtos/`: API input/output contracts with attribute-based validation rules.
+- `Persistence/`: EF Core `IEntityTypeConfiguration<T>` classes for entity models.
 
 This keeps Tenancy readable without creating separate projects or architecture layers.
 
@@ -179,14 +271,11 @@ Use dependency injection with generic persistence:
 ```text
 IRepository<Tenant> -> Repository<Tenant>
 IRepository<Product> -> Repository<Product>
-IEntityService<Tenant> -> EntityService<Tenant>
-IEntityService<Product> -> EntityService<Product>
 IUnitOfWork -> UnitOfWork
 AppDbContext -> EF Core database session
 ```
 
 The repository does repeated CRUD work.
-The entity service provides reusable CRUD operations above the repository.
 The Unit of Work saves changes.
 The DbContext is still required because EF Core needs one object that knows the database connection and tracked entities.
 
@@ -195,8 +284,6 @@ Do not create this at the beginning:
 ```text
 Tenancy/Data/TenancyDbContext.cs
 Tenancy/Data/TenantRepository.cs
-Tenancy/Data/TenantConfiguration.cs
-Tenancy/Data/TenantMembershipConfiguration.cs
 ```
 
 Instead, start with:
@@ -205,13 +292,20 @@ Instead, start with:
 Common/Persistence/AppDbContext.cs
 Common/Persistence/Repository.cs
 Common/Persistence/UnitOfWork.cs
-Common/Services/EntityService.cs
+Common/Services/EntityServiceBase.cs
 ```
 
-Put simple EF mappings directly inside `AppDbContext.OnModelCreating`.
+Put entity-specific EF mappings inside each feature's `Persistence/` folder in dedicated `IEntityTypeConfiguration<T>` classes.
+Soft-delete query filters are applied centrally — do not repeat `HasQueryFilter(x => x.IsActive)` per entity.
+`AppDbContext.OnModelCreating` applies both through explicit extension methods:
 
-Extract configuration classes only when `OnModelCreating` becomes too large.
-Create a specific repository only when the generic repository cannot express a required query clearly.
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.ApplyOpenStoreConfigurations();
+    modelBuilder.ApplySoftDeleteQueryFilters();
+}
+```
 
 ---
 
@@ -227,24 +321,29 @@ src/
     Common/
       Contracts/
         IRepository.cs
-        IEntityService.cs
         IUnitOfWork.cs
         ITenantEntity.cs
         ICurrentUserContext.cs
         IDateTimeProvider.cs
       Entities/
         BaseEntity.cs
-        BaseTenantEntity.cs
-      Persistence/
+     Persistence/
         AppDbContext.cs
         Repository.cs
         UnitOfWork.cs
+        ModelBuilderConfigurationExtensions.cs
+        SoftDeleteModelBuilderExtensions.cs
       Services/
-        EntityService.cs
+        EntityServiceBase.cs
       Time/
         SystemDateTimeProvider.cs
       Errors/
         GlobalExceptionHandler.cs
+        ModelValidationException.cs
+        ProblemDetailsBuilder.cs
+      Validation/
+        RequiredGuidAttribute.cs
+        SlugAttribute.cs
 
     Tenancy/
       Controllers/
@@ -256,8 +355,9 @@ src/
       Models/
         Tenant.cs
         TenantMembership.cs
-      Validators/
-        TenantValidator.cs
+      Persistence/
+        TenantConfiguration.cs
+        TenantMembershipConfiguration.cs
       Dtos/
         CreateTenantRequest.cs
         CreateTenantResponse.cs
@@ -265,8 +365,8 @@ src/
 
 No `TenancyDbContext`.
 No `TenantRepository`.
-No `TenantConfiguration`.
 No separate Domain/Application/Infrastructure projects.
+`TenantConfiguration` and `TenantMembershipConfiguration` live in `Tenancy/Persistence/` because they belong to the feature.
 
 ---
 
@@ -274,7 +374,7 @@ No separate Domain/Application/Infrastructure projects.
 
 Split only when there is real pressure:
 
-- `AppDbContext.OnModelCreating` is too large: extract `TenantConfiguration`.
+- `ModelBuilderConfigurationExtensions.ApplyOpenStoreConfigurations` is too long: consider `ApplyConfigurationsFromAssembly`.
 - Generic repository cannot express a query cleanly: create `TenantRepository`.
 - `Tenancy/Models` has too many models: split by sub-feature.
 - `Tenancy/Services` has too many services: split by sub-feature.
@@ -308,12 +408,28 @@ tests/OpenStore.Api.Tests/Tenancy/Controllers/TenantsControllerTests.cs
 ```
 
 ```text
-(Removed — slug validation folded into TenantValidator, no value object needed)
+src/OpenStore.Api/Common/Errors/ModelValidationException.cs
+tests/OpenStore.Api.Tests/Common/Errors/ModelValidationExceptionTests.cs
 ```
 
 ```text
-src/OpenStore.Api/Tenancy/Validators/TenantValidator.cs
-tests/OpenStore.Api.Tests/Tenancy/Validators/TenantValidatorTests.cs
+src/OpenStore.Api/Common/Errors/ProblemDetailsBuilder.cs
+tests/OpenStore.Api.Tests/Common/Errors/ProblemDetailsBuilderTests.cs
+```
+
+```text
+src/OpenStore.Api/Common/Validation/SlugAttribute.cs
+tests/OpenStore.Api.Tests/Common/Validation/SlugAttributeTests.cs
+```
+
+```text
+src/OpenStore.Api/Common/Validation/RequiredGuidAttribute.cs
+tests/OpenStore.Api.Tests/Common/Validation/RequiredGuidAttributeTests.cs
+```
+
+```text
+src/OpenStore.Api/Common/Services/EntityServiceBase.cs
+tests/OpenStore.Api.Tests/Common/Services/EntityServiceBaseTests.cs
 ```
 
 Namespaces follow the same logical path:
@@ -344,13 +460,14 @@ Use the simple initial structure:
 - One test project: tests/OpenStore.Api.Tests.
 - Common/Contracts for interfaces.
 - Common/Entities for base entity classes.
-- Common/Persistence for AppDbContext, Repository, and UnitOfWork.
-- Common/Services for EntityService.
+- Common/Persistence for AppDbContext, Repository, UnitOfWork, and extension methods.
+- Common/Services for EntityServiceBase.
 - Tenancy/Controllers for TenantsController.
 - Tenancy/Services for TenantService.
 - Tenancy/Contracts for ITenantService.
 - Tenancy/Models for Tenant and TenantMembership.
-- Tenancy/Validators for TenantValidator.
+- Tenancy/Persistence for EF Core entity configurations (TenantConfiguration, TenantMembershipConfiguration).
+- Common/Validation for reusable validation attributes such as SlugAttribute and RequiredGuidAttribute.
 - Tenancy/Dtos for CreateTenantRequest and CreateTenantResponse.
 - Tests mirror the source structure under tests/OpenStore.Api.Tests.
 - Test files must end with Tests.cs.
@@ -358,8 +475,8 @@ Use the simple initial structure:
 Do not create Domain/Application/Infrastructure projects.
 Do not create TenancyDbContext.
 Do not create TenantRepository unless the generic repository cannot solve the query.
-Do not create TenantConfiguration unless AppDbContext mapping becomes too large.
-Use IEntityService<TEntity> and EntityService<TEntity> for reusable CRUD.
+Entity configurations (IEntityTypeConfiguration<T>) live in each feature's Persistence/ folder.
+There is no generic IEntityService — use Repository<T> directly for data access and EntityServiceBase<TEntity> as a base class for feature services that need persistence helpers.
 Use TenantService for CreateTenant because it has business rules beyond CRUD.
 Show the planned file structure before creating files.
 ```

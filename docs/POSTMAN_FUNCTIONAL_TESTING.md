@@ -65,9 +65,13 @@ public API endpoint for token generation; this is a developer-only tool.
 | Create Tenant - Duplicate Slug | 409 |
 | Create Tenant - Validation Failure | 400 |
 | Create Tenant - Unauthorized | 401 |
+| Create Store - Success | 201 |
+| Create Store - Validation Failure | 400 |
+| Create Store - Unauthorized | 401 |
+| Create Store - Tenant Not Found | 404 |
 
-The Unauthorized request does not include an `Authorization` header, so it
-tests that `[Authorize]` rejects unauthenticated requests.
+The Unauthorized requests do not include an `Authorization` header, so they
+test that `[Authorize]` rejects unauthenticated requests.
 
 ---
 
@@ -216,7 +220,7 @@ Do not make normal CI depend on production services or production credentials.
 
 When a feature adds or changes an HTTP endpoint, the task is not complete until:
 
-- OpenAPI metadata is updated.
+- Postman request and response examples are updated.
 - Automated tests are added.
 - Postman collection request is added or updated.
 - Important response examples are documented.

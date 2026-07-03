@@ -15,7 +15,7 @@ One test project
 One shared Common folder
 Feature folders inside the API
 Generic Repository + Unit of Work
-Generic Entity Service for simple CRUD
+EntityServiceBase for concrete services
 One AppDbContext
 Postman for functional API testing
 ```
@@ -37,7 +37,6 @@ Postman or client
   -> Tenancy/Contracts/ITenantService
   -> Tenancy/Services/TenantService
   -> Tenant / TenantMembership
-  -> IEntityService<Tenant> and IEntityService<TenantMembership>
   -> IRepository<Tenant> and IRepository<TenantMembership>
   -> UnitOfWork
   -> AppDbContext
@@ -51,7 +50,6 @@ Meaning:
 - Request is what enters the API.
 - Feature service contains the use-case logic.
 - Models represent business data.
-- Entity Service provides reusable CRUD behavior above repositories.
 - Repository performs repeated CRUD.
 - Unit of Work saves changes once.
 - AppDbContext is EF Core's database session.
@@ -80,7 +78,6 @@ Interfaces only.
 Examples:
 
 - `IRepository`
-- `IEntityService`
 - `IUnitOfWork`
 - `ITenantEntity`
 - `ICurrentUserContext`
@@ -88,12 +85,11 @@ Examples:
 
 ### `Common/Entities`
 
-Base entity classes only.
+Base entity class only.
 
 Examples:
 
 - `BaseEntity`
-- `BaseTenantEntity`
 
 ### `Common/Persistence`
 
@@ -107,11 +103,11 @@ Examples:
 
 ### `Common/Services`
 
-Reusable generic services.
+Reusable generic abstract base services for concrete feature services.
 
 Examples:
 
-- `EntityService`
+- `EntityServiceBase`
 
 ### `Common/Time`
 
@@ -252,121 +248,194 @@ A request may carry a public identifier or slug, but must not trust an internal 
 
 ---
 
-## 5. Entity Service Pattern
+## 5. Entity Inheritance
 
-Use `IEntityService<TEntity>` as the generic service layer for simple CRUD.
+OpenStore uses a single base entity class and one entity contract interface:
+
+```text
+Common/Entities/BaseEntity.cs
+Common/Contracts/ITenantEntity.cs
+```
+
+`BaseEntity` owns every common field:
+
+- `long Id` — internal database primary key
+- `Guid PublicId` — public opaque identifier
+- `DateTimeOffset CreatedAtUtc` — creation timestamp
+- `DateTimeOffset? UpdatedAtUtc` — last update timestamp
+- `bool IsActive` — soft-delete flag
+- `DateTimeOffset? DeletedAtUtc` — soft-delete timestamp
+- `MarkAsDeleted(DateTimeOffset)` — soft-delete method
+- `Restore()` — undo soft-delete
+
+`ITenantEntity` is a marker contract:
 
 ```csharp
-public interface IEntityService<TEntity>
-    where TEntity : BaseEntity
+public interface ITenantEntity
 {
-    Task<IReadOnlyList<TEntity>> GetAllAsync(CancellationToken cancellationToken);
-
-    Task<TEntity?> GetByIdAsync(long id, CancellationToken cancellationToken);
-
-    Task<bool> AnyAsync(
-        Expression<Func<TEntity, bool>> predicate,
-        CancellationToken cancellationToken);
-
-    Task AddAsync(TEntity entity, CancellationToken cancellationToken);
-
-    void Update(TEntity entity);
-
-    Task DeleteAsync(long id, CancellationToken cancellationToken);
+    long TenantId { get; }
 }
 ```
 
-Default implementation:
+Inheritance rules:
 
-```csharp
-public sealed class EntityService<TEntity> : IEntityService<TEntity>
-    where TEntity : BaseEntity
-{
-    private readonly IRepository<TEntity> repository;
+| Entity | Inherits | Implements | Has TenantId? |
+|--------|----------|------------|---------------|
+| `Tenant` | `BaseEntity` | — | No |
+| `TenantMembership` | `BaseEntity` | `ITenantEntity` | Yes |
+| `Store` | `BaseEntity` | `ITenantEntity` | Yes |
+| `Category` | `BaseEntity` | `ITenantEntity` | Yes |
+| `Product` | `BaseEntity` | `ITenantEntity` | Yes |
 
-    public EntityService(IRepository<TEntity> repository)
-    {
-        this.repository = repository;
-    }
-
-    public async Task<IReadOnlyList<TEntity>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        IReadOnlyList<TEntity> entities = await repository.GetAllAsync(cancellationToken);
-
-        return entities;
-    }
-
-    public async Task<TEntity?> GetByIdAsync(long id, CancellationToken cancellationToken)
-    {
-        TEntity? entity = await repository.GetByIdAsync(id, cancellationToken);
-
-        return entity;
-    }
-
-    public async Task<bool> AnyAsync(
-        Expression<Func<TEntity, bool>> predicate,
-        CancellationToken cancellationToken)
-    {
-        bool exists = await repository.AnyAsync(predicate, cancellationToken);
-
-        return exists;
-    }
-
-    public async Task AddAsync(TEntity entity, CancellationToken cancellationToken)
-    {
-        await repository.AddAsync(entity, cancellationToken);
-    }
-
-    public void Update(TEntity entity)
-    {
-        repository.Update(entity);
-    }
-
-    public async Task DeleteAsync(long id, CancellationToken cancellationToken)
-    {
-        await repository.DeleteAsync(id, cancellationToken);
-    }
-}
-```
-
-Register open generics in `Program.cs`:
-
-```csharp
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddScoped(typeof(IEntityService<>), typeof(EntityService<>));
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-```
-
-`EntityService<TEntity>` must not call `SaveChangesAsync`. Use `IUnitOfWork` in the controller or feature service so one use case can save all changes together.
-
-Use `EntityService<TEntity>` directly from controllers only for simple CRUD with no business rules.
-
-Use a feature-specific service when the operation has business rules.
-
-Example:
-
-```csharp
-public sealed class TenantService
-{
-    private readonly IEntityService<Tenant> tenantService;
-    private readonly IEntityService<TenantMembership> membershipService;
-    private readonly IUnitOfWork unitOfWork;
-
-    public TenantService(
-        IEntityService<Tenant> tenantService,
-        IEntityService<TenantMembership> membershipService,
-        IUnitOfWork unitOfWork)
-    {
-        this.tenantService = tenantService;
-        this.membershipService = membershipService;
-        this.unitOfWork = unitOfWork;
-    }
-}
-```
+- `Tenant` is the root — it has no `TenantId`.
+- All tenant-scoped models implement `ITenantEntity`.
+- There is no `BaseTenantEntity` or `ISoftDeleteEntity`.
+- Soft-delete behavior lives directly in `BaseEntity`.
+- Query filters (`HasQueryFilter(e => e.IsActive)`) are applied per entity type in `AppDbContext.OnModelCreating`.
 
 ---
 
-## 6. Why AppDbContext Exists
+## 6. EntityServiceBase Pattern
+
+Use `EntityServiceBase<TEntity>` as an abstract base class for feature-specific services that need common persistence helpers.
+
+It is not a generic CRUD service — concrete services own all business operations and mapping.
+
+```csharp
+public abstract class EntityServiceBase<TEntity> where TEntity : BaseEntity
+{
+    protected IRepository<TEntity> Repository { get; }
+
+    protected IUnitOfWork UnitOfWork { get; }
+
+    protected IDateTimeProvider DateTimeProvider { get; }
+
+    protected EntityServiceBase(
+        IRepository<TEntity> repository,
+        IUnitOfWork unitOfWork,
+        IDateTimeProvider dateTimeProvider)
+    {
+        Repository = repository;
+        UnitOfWork = unitOfWork;
+        DateTimeProvider = dateTimeProvider;
+    }
+
+    protected async Task<TEntity> GetByPublicIdOrThrowAsync(
+        Guid publicId,
+        Func<Exception> notFoundFactory,
+        CancellationToken cancellationToken);
+
+    protected async Task<bool> ExistsAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        CancellationToken cancellationToken);
+
+    protected async Task<IReadOnlyCollection<TEntity>> FindAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        CancellationToken cancellationToken);
+
+    protected void Add(TEntity entity);
+    protected void Update(TEntity entity);
+    protected void Remove(TEntity entity);
+    protected async Task SaveChangesAsync(CancellationToken cancellationToken);
+}
+```
+
+Feature services inherit and add their own business rules:
+
+```csharp
+public sealed class StoreService : EntityServiceBase<Store>, IStoreService
+{
+    private readonly IRepository<Tenant> _tenantRepository;
+    private readonly ICurrentUserContext _currentUser;
+
+    public async Task<StoreResponse> UpdateAsync(
+        Guid publicId,
+        UpdateStoreRequest request,
+        CancellationToken cancellationToken)
+    {
+        Store store = await GetByPublicIdOrThrowAsync(
+            publicId,
+            () => new StoreNotFoundException(),
+            cancellationToken);
+
+        // business rules...
+        Update(store);
+        await SaveChangesAsync(cancellationToken);
+    }
+}
+```
+
+Register only concrete services in `Program.cs`:
+
+```csharp
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IStoreService, StoreService>();
+```
+
+There is no generic `IEntityService<T>` or `EntityService<T>` — that concept has been intentionally removed. `Repository<T>` remains the generic data access abstraction. `EntityServiceBase<TEntity>` is a base class, not a replaceable service.
+
+---
+
+## 7. Generic CRUD Service Contracts
+
+Common CRUD signatures live in `Common/Contracts` as generic interfaces.
+Feature interfaces inherit them and declare only feature-specific methods.
+
+### `ICrudService<TResponse, TCreateRequest, TUpdateRequest>`
+
+For root entities that are not children of another feature entity (e.g., Store):
+
+```csharp
+public interface ICrudService<TResponse, TCreateRequest, TUpdateRequest>
+{
+    Task<TResponse> CreateAsync(TCreateRequest request, CancellationToken cancellationToken = default);
+    Task<TResponse> GetByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default);
+    Task<TResponse> UpdateAsync(Guid publicId, TUpdateRequest request, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid publicId, CancellationToken cancellationToken = default);
+}
+```
+
+### `IChildCrudService<TResponse, TCreateRequest, TUpdateRequest>`
+
+For entities scoped under a parent entity (e.g., Category under Store, Product under Store):
+
+```csharp
+public interface IChildCrudService<TResponse, TCreateRequest, TUpdateRequest>
+{
+    Task<TResponse> CreateAsync(Guid parentPublicId, TCreateRequest request, CancellationToken cancellationToken = default);
+    Task<TResponse> GetByPublicIdAsync(Guid parentPublicId, Guid publicId, CancellationToken cancellationToken = default);
+    Task<TResponse> UpdateAsync(Guid parentPublicId, Guid publicId, TUpdateRequest request, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid parentPublicId, Guid publicId, CancellationToken cancellationToken = default);
+}
+```
+
+### Inheritance pattern
+
+Feature interfaces inherit the generic contract and add only their own methods:
+
+```csharp
+public interface IStoreService : ICrudService<StoreResponse, CreateStoreRequest, UpdateStoreRequest>
+{
+    Task<IReadOnlyCollection<StoreResponse>> GetByTenantPublicIdAsync(Guid tenantPublicId, CancellationToken cancellationToken = default);
+}
+
+public interface ICategoryService : IChildCrudService<CategoryResponse, CreateCategoryRequest, UpdateCategoryRequest>
+{
+    Task<IReadOnlyCollection<CategoryResponse>> GetByStorePublicIdAsync(Guid storePublicId, CancellationToken cancellationToken = default);
+}
+```
+
+### Rules
+
+- `CreateAsync` normally returns the same response DTO used by `GetByPublicIdAsync` and `UpdateAsync`.
+- A create-specific response DTO is allowed only when it contains genuinely different data (e.g., `CreateTenantResponse` because there is no general `TenantResponse`).
+- Concrete services implement the feature interface and its inherited methods directly.
+- `ITenantService` is not forced into a generic contract because it only supports `CreateAsync` today.
+
+---
+
+## 8. Why AppDbContext Exists
 
 Dependency injection can resolve:
 
@@ -382,7 +451,7 @@ But `Repository<Tenant>` still needs EF Core.
 - Which models exist.
 - Which objects are being tracked.
 - How to save changes.
-- How simple mappings are configured.
+- How entity metadata is configured.
 
 So the initial rule is:
 
@@ -393,38 +462,126 @@ UnitOfWork for SaveChanges.
 No module-specific DbContext at the beginning.
 ```
 
----
-
-## 7. Database Mapping
-
-Start with simple mappings inside `AppDbContext.OnModelCreating`.
-
-Example:
+`AppDbContext.OnModelCreating` stays small:
 
 ```csharp
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
-    modelBuilder.Entity<Tenant>(entity =>
-    {
-        entity.ToTable("tenants");
-        entity.HasKey(tenant => tenant.Id);
-        entity.Property(tenant => tenant.Name).IsRequired();
-        entity.HasIndex(tenant => tenant.Slug).IsUnique();
-    });
-
-    modelBuilder.Entity<TenantMembership>(entity =>
-    {
-        entity.ToTable("tenant_memberships");
-        entity.HasKey(membership => membership.Id);
-    });
+    modelBuilder.ApplyOpenStoreConfigurations();
+    modelBuilder.ApplySoftDeleteQueryFilters();
 }
 ```
 
-Do not create separate `TenantConfiguration` or `TenantMembershipConfiguration` files until `OnModelCreating` becomes hard to read.
+Entity-specific mapping lives in feature-level `IEntityTypeConfiguration<T>` classes.
+Soft-delete query filters are applied centrally through a reflection-based extension, not repeated per entity.
 
 ---
 
-## 8. Tenancy
+## 9. Database Mapping
+
+Do not put Fluent API mappings inside `AppDbContext.OnModelCreating`.
+Create one `IEntityTypeConfiguration<T>` class per entity inside the owning feature folder's `Persistence/` subfolder.
+
+Feature folders with entity models include:
+
+```text
+Tenancy/
+  Persistence/
+    TenantConfiguration.cs
+    TenantMembershipConfiguration.cs
+Stores/
+  Persistence/
+    StoreConfiguration.cs
+Categories/
+  Persistence/
+    CategoryConfiguration.cs
+Products/
+  Persistence/
+    ProductConfiguration.cs
+```
+
+These are applied explicitly through a shared extension:
+
+```csharp
+// Common/Persistence/ModelBuilderConfigurationExtensions.cs
+internal static class ModelBuilderConfigurationExtensions
+{
+    public static void ApplyOpenStoreConfigurations(this ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfiguration(new TenantConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantMembershipConfiguration());
+        modelBuilder.ApplyConfiguration(new StoreConfiguration());
+        modelBuilder.ApplyConfiguration(new CategoryConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductConfiguration());
+    }
+}
+```
+
+This is explicit, easy to navigate, and avoids `ApplyConfigurationsFromAssembly` magic.
+
+Example configuration:
+
+```csharp
+internal sealed class StoreConfiguration : IEntityTypeConfiguration<Store>
+{
+    public void Configure(EntityTypeBuilder<Store> entity)
+    {
+        entity.HasKey(s => s.Id);
+        entity.Property(s => s.Id).ValueGeneratedOnAdd();
+        entity.Property(s => s.PublicId).IsRequired();
+        entity.Property(s => s.TenantId).IsRequired();
+        entity.Property(s => s.Name).HasMaxLength(200).IsRequired();
+        entity.Property(s => s.Slug).HasMaxLength(100).IsRequired();
+        entity.HasIndex(s => s.PublicId).IsUnique();
+        entity.HasIndex(s => new { s.TenantId, s.Slug }).IsUnique();
+        entity.HasOne<Tenant>().WithMany().HasForeignKey(s => s.TenantId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+```
+
+Do not put `HasQueryFilter(x => x.IsActive)` inside entity configurations.
+Soft-delete query filters are applied centrally — see the next section.
+
+---
+
+## 10. Soft Delete Query Filters
+
+Because `BaseEntity` owns `IsActive`, query filters are applied centrally rather than repeated per entity.
+
+```csharp
+// Common/Persistence/SoftDeleteModelBuilderExtensions.cs
+internal static class SoftDeleteModelBuilderExtensions
+{
+    public static void ApplySoftDeleteQueryFilters(this ModelBuilder modelBuilder)
+    {
+        foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                continue;
+            }
+
+            ParameterExpression parameter = Expression.Parameter(entityType.ClrType, "entity");
+            MemberExpression property = Expression.Property(parameter, nameof(BaseEntity.IsActive));
+            LambdaExpression filter = Expression.Lambda(property, parameter);
+
+            entityType.SetQueryFilter(filter);
+        }
+    }
+}
+```
+
+This uses expression trees against entity metadata. Every entity that inherits `BaseEntity` automatically gets `entity => entity.IsActive` as a query filter.
+
+Rules:
+
+- Do not repeat `HasQueryFilter(x => x.IsActive)` inside individual entity configurations.
+- Do not create `ISoftDeleteEntity` or a secondary base class.
+- If an entity should not be filtered, add an explicit opt-out mechanism later — the MVP has no such case.
+
+---
+
+## 11. Tenancy
 
 Start with one readable feature folder:
 
@@ -456,10 +613,10 @@ Controllers should depend on `ITenantService`, not directly on `TenantService`.
 
 Do not create `TenantRepository` at the beginning.
 
-For slug uniqueness, use:
+For slug uniqueness, use the repository directly:
 
 ```csharp
-bool exists = await tenantEntityService.AnyAsync(
+bool exists = await _tenantRepository.AnyAsync(
     tenant => tenant.Slug == slug,
     cancellationToken);
 ```
@@ -468,11 +625,11 @@ Create `TenantRepository` later only if the generic repository becomes awkward o
 
 ---
 
-## 9. When To Add More Structure
+## 12. When To Add More Structure
 
 Add structure only when the code asks for it:
 
-- Many EF mappings: extract configuration classes.
+- Many EF mappings inside `ModelBuilderConfigurationExtensions`: consider `ApplyConfigurationsFromAssembly`.
 - Specific repeated queries: create a specific repository.
 - Too many files inside a Tenancy subfolder: split that subfolder by sub-feature.
 - Too many API features: consider separate module projects through an ADR.

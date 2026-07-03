@@ -1,6 +1,6 @@
 ---
 name: create-crud-use-case
-description: Implement or modify one OpenStore create, read, update, delete, deactivate, archive, or query use case inside an existing bounded context. Use when a request needs endpoint, application service, contracts, validation, persistence, authorization, tenant or store isolation, typed exceptions, OpenAPI metadata, and tests.
+description: Implement or modify one OpenStore create, read, update, delete, deactivate, archive, or query use case inside an existing bounded context. Use when a request needs endpoint, application service, contracts, validation, persistence, authorization, tenant or store isolation, typed exceptions, tests, and Postman functional requests.
 ---
 
 # Create CRUD Use Case
@@ -36,7 +36,7 @@ If an input is missing, infer it from existing code and documentation when safe.
 8. Implement authorization through the existing project abstraction.
 9. Implement persistence in the owning infrastructure project without exposing EF entities.
 10. Map explicitly to response contracts.
-11. Add or update endpoint mapping and OpenAPI metadata.
+11. Add or update controller actions and Postman functional requests when HTTP behavior changes.
 12. Add a dedicated xUnit test class named `<UseCaseOrServiceName>Tests`.
 13. Add success, invalid input, missing resource, unauthorized, cross-tenant, dependency failure, and cancellation tests when applicable.
 14. Add unit tests through contracts and substituted dependencies. If persistence or full HTTP pipeline coverage is truly required, stop and ask for an explicit integration-test decision.

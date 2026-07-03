@@ -204,7 +204,7 @@ CI should eventually run:
 - Dependency vulnerability scan.
 - License compatibility scan.
 - Container build.
-- OpenAPI generation or validation.
+- API contract validation through Postman collection tests. OpenAPI generation is deferred until explicitly needed.
 
 Do not make CI depend on live external provider accounts.
 

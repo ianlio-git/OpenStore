@@ -1,8 +1,8 @@
 using OpenStore.Api.Common.Contracts;
 using OpenStore.Api.Tenancy.Contracts;
 using OpenStore.Api.Tenancy.Dtos;
+using OpenStore.Api.Tenancy.Exceptions;
 using OpenStore.Api.Tenancy.Models;
-using OpenStore.Api.Tenancy.Validators;
 
 namespace OpenStore.Api.Tenancy.Services;
 
@@ -27,9 +27,9 @@ public sealed class TenantService : ITenantService
 
     public async Task<CreateTenantResponse> CreateAsync(CreateTenantRequest request, CancellationToken cancellationToken = default)
     {
-        string normalizedSlug = TenantValidator.Validate(request);
+        string normalizedSlug = request.Slug.Trim();
 
-        await TenantValidator.ValidateSlugIsAvailableAsync(normalizedSlug, _tenantRepository, cancellationToken);
+        await ValidateSlugIsAvailableAsync(normalizedSlug, cancellationToken);
 
         Guid userId = _currentUser.GetRequiredUserId();
 
@@ -63,5 +63,15 @@ public sealed class TenantService : ITenantService
         };
 
         return response;
+    }
+
+    private async Task ValidateSlugIsAvailableAsync(string slug, CancellationToken cancellationToken)
+    {
+        bool slugExists = await _tenantRepository.AnyAsync(t => t.Slug == slug, cancellationToken);
+
+        if (slugExists)
+        {
+            throw new DuplicateTenantSlugException();
+        }
     }
 }

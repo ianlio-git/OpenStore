@@ -306,35 +306,88 @@ The bad example exposes implementation detail only for testing. Test `CreateAsyn
 
 ## 7. Validation
 
-Validation may be implemented with:
+### 7.1 Attribute-driven validation
 
-- A focused validator class.
-- A focused static validation helper.
-- Domain factory validation.
-- Value object construction.
-- Database constraint validation.
+Common validation rules are expressed as DataAnnotations attributes on DTO and entity properties:
 
-Approved names:
+- `[Required]` — value must not be null or empty.
+- `[StringLength(max)]` — value must not exceed max length.
+- `[Slug]` — value must be required, max 100 chars, lowercase/digits/hyphens only. Defined in `Common/Validation/SlugAttribute.cs`.
+- `[RequiredGuid]` — value must not be `Guid.Empty`. Defined in `Common/Validation/RequiredGuidAttribute.cs`.
 
-- `ProductValidator`
-- `ProductValidationHelper`
-- `StoreSlugValidator`
-- `MoneyValidationHelper`
+Attributes are placed directly on request DTOs and entity classes. No separate validator classes are needed for format/required checks.
 
-Avoid:
+```csharp
+public sealed record CreateTenantRequest
+{
+    [Required]
+    [StringLength(200)]
+    public string Name { get; init; }
 
-- `Utils`
-- `CommonHelper`
-- `ValidationManager`
-- Giant helper classes spanning unrelated domains.
+    [Required]
+    [StringLength(100)]
+    [Slug]
+    public string Slug { get; init; }
+}
+```
 
-Validation helpers must:
+Do not create per-field or per-module validation exception classes. Use `ModelValidationException` for all attribute-based validation failures.
 
-- Be cohesive.
-- Be deterministic.
-- Avoid database and network calls.
-- Throw typed validation exceptions or return one explicit validation result.
-- Have unit tests.
+Do not use `Regex` or partial classes for validation. Use pure character checks in custom attributes.
+
+### 7.2 Business-rule validation
+
+Business-rule validation (duplicate slug, not found, forbidden) uses typed project exceptions thrown by the service layer. Services do not manually validate required/length/format rules — those are handled by attributes and infrastructure.
+
+```csharp
+public async Task<CreateTenantResponse> CreateAsync(
+    CreateTenantRequest request,
+    CancellationToken cancellationToken)
+{
+    string slug = request.Slug.Trim();
+    await ValidateSlugIsAvailableAsync(slug, cancellationToken);
+    // business logic...
+}
+```
+
+### 7.3 Validation error response shape
+
+All validation failures produce the same response shape whether they come from ASP.NET ModelState or `AppDbContext` entity validation:
+
+```json
+{
+  "type": "https://httpstatuses.io/400",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "One or more validation errors occurred.",
+  "instance": "/api/stores",
+  "errorCode": "validation.failed",
+  "errors": {
+    "name": ["The Name field is required."],
+    "slug": ["Slug must contain only lowercase letters, digits, and hyphens."]
+  }
+}
+```
+
+Error keys use camelCase (e.g., `name`, `slug`, `tenantPublicId`). `ProblemDetailsBuilder` (in `Common/Errors/ProblemDetailsBuilder.cs`) constructs the response from any `OpenStoreException`. When the exception is `ModelValidationException` with field-level errors, the `errors` extension is included.
+
+### 7.4 API-level validation (InvalidModelStateResponseFactory)
+
+ASP.NET ModelState (triggered by `[Required]`, `[StringLength]` on DTOs) is converted by `InvalidModelStateResponseFactory` in `Program.cs` using `ModelValidationException.FromModelState()` and `ProblemDetailsBuilder.Build()`.
+
+### 7.5 Entity-level validation (AppDbContext)
+
+`AppDbContext.SaveChangesAsync` validates all added/modified entities via `Validator.TryValidateObject` and throws `ModelValidationException.FromValidationResults()` on failure. This catches DataAnnotations on entity classes before hitting the database.
+
+### 7.6 Summary
+
+Validation must:
+
+- Be expressed as DataAnnotations attributes on DTOs and entities for format/required rules.
+- Use `ModelValidationException` for all attribute-based validation failures.
+- Use typed business exceptions for domain-rule failures (duplicate, not found).
+- Produce camelCase error keys in the ProblemDetails JSON response.
+- Have unit tests for custom validation attributes.
 
 ---
 
@@ -480,12 +533,12 @@ Preferred reusable shapes:
 - Tenant and store ownership services.
 - External provider adapters.
 - Small application or domain services with one clear responsibility.
+- Generic repositories only for repeated persistence plumbing.
 
 Avoid:
 
 - Large generic helpers.
 - `Utils`, `Manager`, or broad shared services.
-- Generic repositories.
 - Shared domain packages across bounded contexts.
 - Abstractions created before there is real duplication or a clear domain concept.
 

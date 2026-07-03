@@ -15,4 +15,20 @@ public abstract class BaseEntity
     public DateTimeOffset CreatedAtUtc { get; internal set; }
 
     public DateTimeOffset? UpdatedAtUtc { get; internal set; }
+
+    public bool IsActive { get; internal set; } = true;
+
+    public DateTimeOffset? DeletedAtUtc { get; internal set; }
+
+    public void MarkAsDeleted(DateTimeOffset utcNow)
+    {
+        IsActive = false;
+        DeletedAtUtc = utcNow;
+    }
+
+    public void Restore()
+    {
+        IsActive = true;
+        DeletedAtUtc = null;
+    }
 }

@@ -64,7 +64,39 @@ throw new InvalidOperationException(
 
 ## 3. Validation exceptions
 
-A focused exception may represent one domain rule.
+### 3.1 Generic DataAnnotations validation
+
+Generic attribute-based validation (required, length, format) uses a single reusable exception with field-level errors:
+
+```csharp
+public sealed class ModelValidationException : OpenStoreException
+{
+    private const string Code = "validation.failed";
+
+    public ModelValidationException(IReadOnlyDictionary<string, string[]> errors)
+        : base(Code, StatusCodes.Status400BadRequest, "One or more validation errors occurred.")
+    {
+        Errors = errors;
+    }
+
+    public IReadOnlyDictionary<string, string[]> Errors { get; }
+
+    public static ModelValidationException FromModelState(ModelStateDictionary modelState);
+    public static ModelValidationException FromValidationResults(IEnumerable<ValidationResult> results);
+}
+```
+
+Factory methods:
+- `FromModelState` — converts ASP.NET `ModelStateDictionary` (used in `InvalidModelStateResponseFactory`).
+- `FromValidationResults` — converts `ValidationResult` collection (used by `AppDbContext` entity validation).
+
+Validation is driven by DataAnnotations attributes (`[Required]`, `[StringLength]`, `[Slug]`, `[RequiredGuid]`) on DTOs and entity classes. ASP.NET ModelState catches API input violations. `AppDbContext.SaveChangesAsync` validates changed entities before saving.
+
+Do not create one validation exception per field or per module. The `ModelValidationException` is the single exception for all `[Required]`, `[StringLength]`, and similar attribute-based validation failures.
+
+### 3.2 Business-rule validation exceptions
+
+A focused exception may represent one domain business rule, not a generic attribute check:
 
 ```csharp
 public sealed class InvalidProductPriceException : OpenStoreException
@@ -82,6 +114,11 @@ public sealed class InvalidProductPriceException : OpenStoreException
 ```
 
 Do not expose sensitive input values in messages.
+
+### 3.3 Summary rule
+
+- **Generic attribute/rule validation** (required, max length, slug format) → `ModelValidationException`.
+- **Service/use-case/business errors** (duplicate, not found, forbidden) → typed business exceptions.
 
 ---
 
@@ -152,6 +189,24 @@ Problem Details include:
 - `detail`
 - `instance`
 - project `errorCode`
+- `errors` (only present for `ModelValidationException` when it has field-level errors)
+
+Validation response shape example:
+
+```json
+{
+  "type": "https://httpstatuses.io/400",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "One or more validation errors occurred.",
+  "instance": "/api/tenants",
+  "errorCode": "validation.failed",
+  "errors": {
+    "name": ["The Name field is required."],
+    "slug": ["Slug must contain only lowercase letters, digits, and hyphens."]
+  }
+}
+```
 
 Non-`OpenStoreException` exceptions map to HTTP 500 with `errorCode: "unknown.error"`.
 

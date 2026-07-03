@@ -1,13 +1,19 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OpenStore.Api.Common.Auth;
 using OpenStore.Api.Common.Contracts;
 using OpenStore.Api.Common.Errors;
 using OpenStore.Api.Common.Persistence;
-using OpenStore.Api.Common.Services;
 using OpenStore.Api.Common.Time;
+using OpenStore.Api.Categories.Contracts;
+using OpenStore.Api.Categories.Services;
+using OpenStore.Api.Products.Contracts;
+using OpenStore.Api.Products.Services;
+using OpenStore.Api.Stores.Contracts;
+using OpenStore.Api.Stores.Services;
 using OpenStore.Api.Tenancy.Contracts;
 using OpenStore.Api.Tenancy.Services;
 
@@ -18,10 +24,12 @@ string connectionString = builder.Configuration.GetConnectionString("DefaultConn
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddScoped(typeof(IEntityService<>), typeof(EntityService<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
@@ -47,18 +55,32 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            ModelValidationException exception = ModelValidationException.FromModelState(context.ModelState);
+            ProblemDetails problem = ProblemDetailsBuilder.Build(context.HttpContext, exception);
+
+            ObjectResult result = new(problem)
+            {
+                StatusCode = exception.StatusCode,
+                ContentTypes = { "application/problem+json" }
+            };
+
+            return result;
+        };
+    });
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-builder.Services.AddOpenApi();
 
 WebApplication app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
 
     using IServiceScope scope = app.Services.CreateScope();
     AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

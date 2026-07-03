@@ -44,13 +44,15 @@ src/
         TenantService.cs
 tests/
   OpenStore.Api.Tests/
+    Common/
+      Validation/
+        SlugAttributeTests.cs
+        RequiredGuidAttributeTests.cs
     Tenancy/
       Controllers/
         TenantsControllerTests.cs
       Services/
         TenantServiceTests.cs
-      Validators/
-        TenantValidatorTests.cs
 ```
 
 The differences are:
@@ -113,7 +115,8 @@ Examples:
 ```text
 TenantService.cs -> TenantServiceTests.cs
 TenantsController.cs -> TenantsControllerTests.cs
-TenantValidator.cs -> TenantValidatorTests.cs
+SlugAttribute.cs -> SlugAttributeTests.cs
+RequiredGuidAttribute.cs -> RequiredGuidAttributeTests.cs
 ```
 
 ---

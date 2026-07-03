@@ -48,7 +48,7 @@
                     "    pm.expect(body.slug).to.eql(\"my-store\");",
                     "});",
                     "",
-                    "pm.environment.set(\"tenantPublicId\", pm.response.json().publicId);"
+                    "pm.environment.set(\"storePublicId\", pm.response.json().publicId);"
                 ],
                 "type": "text/javascript"
               }
@@ -170,6 +170,842 @@
                 "exec": [
                   "pm.test(\"status code is 401\", function () {",
                   "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Stores",
+      "item": [
+        {
+          "name": "Create Store - Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantPublicId\": \"{{tenantPublicId}}\",\n  \"name\": \"My Store\",\n  \"slug\": \"my-store\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"response has store id\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.publicId).to.be.a(\"string\");",
+                  "    pm.expect(body.tenantPublicId).to.eql(pm.environment.get(\"tenantPublicId\"));",
+                  "    pm.expect(body.name).to.eql(\"My Store\");",
+                  "    pm.expect(body.slug).to.eql(\"my-store\");",
+                  "    pm.expect(body.createdAtUtc).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Store - Validation Failure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantPublicId\": \"{{tenantPublicId}}\",\n  \"name\": \"\",\n  \"slug\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"response is problem details\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.title).to.eql(\"Bad Request\");",
+                  "    pm.expect(body.errorCode).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Store - Unauthorized",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantPublicId\": \"{{tenantPublicId}}\",\n  \"name\": \"My Store\",\n  \"slug\": \"my-store\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Store - Tenant Not Found",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantPublicId\": \"00000000-0000-0000-0000-000000000000\",\n  \"name\": \"My Store\",\n  \"slug\": \"my-store\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Store - Success",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has store data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.publicId).to.eql(pm.environment.get(\"storePublicId\"));",
+                  "    pm.expect(body.name).to.be.a(\"string\");",
+                  "    pm.expect(body.slug).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Store - Not Found",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/00000000-0000-0000-0000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "00000000-0000-0000-0000-000000000000"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"response is problem details\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.title).to.eql(\"Not Found\");",
+                  "    pm.expect(body.errorCode).to.eql(\"stores.store_not_found\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Stores By Tenant - Success",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/tenants/{{tenantPublicId}}/stores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "tenants", "{{tenantPublicId}}", "stores"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response is an array\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Store - Success",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Store\",\n  \"slug\": \"updated-store\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has updated store data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.name).to.eql(\"Updated Store\");",
+                  "    pm.expect(body.slug).to.eql(\"updated-store\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Store - Success",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Create Category - Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Electronics\",\n  \"slug\": \"electronics\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "categories"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"response has category data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.publicId).to.be.a(\"string\");",
+                  "    pm.expect(body.name).to.eql(\"Electronics\");",
+                  "    pm.expect(body.slug).to.eql(\"electronics\");",
+                  "    pm.expect(body.createdAtUtc).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"categoryPublicId\", pm.response.json().publicId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Category - Success",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories/{{categoryPublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "categories", "{{categoryPublicId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has category data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.publicId).to.eql(pm.environment.get(\"categoryPublicId\"));",
+                  "    pm.expect(body.name).to.be.a(\"string\");",
+                  "    pm.expect(body.slug).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Categories By Store - Success",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "categories"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response is an array\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Category - Success",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Electronics\",\n  \"slug\": \"updated-electronics\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories/{{categoryPublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "categories", "{{categoryPublicId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has updated category data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.name).to.eql(\"Updated Electronics\");",
+                  "    pm.expect(body.slug).to.eql(\"updated-electronics\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Category - Success",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/categories/{{categoryPublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "categories", "{{categoryPublicId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Create Product - Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laptop\",\n  \"slug\": \"laptop\",\n  \"description\": \"A powerful laptop\",\n  \"price\": 999.99\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"response has product data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.publicId).to.be.a(\"string\");",
+                  "    pm.expect(body.name).to.eql(\"Laptop\");",
+                  "    pm.expect(body.slug).to.eql(\"laptop\");",
+                  "    pm.expect(body.price).to.eql(999.99);",
+                  "    pm.expect(body.createdAtUtc).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"productPublicId\", pm.response.json().publicId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Product - With Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Phone\",\n  \"slug\": \"phone\",\n  \"description\": \"A smartphone\",\n  \"price\": 699.99,\n  \"categoryPublicId\": \"{{categoryPublicId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"response has product with category\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.name).to.eql(\"Phone\");",
+                  "    pm.expect(body.slug).to.eql(\"phone\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Product - Success",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products/{{productPublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "products", "{{productPublicId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has product data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.publicId).to.eql(pm.environment.get(\"productPublicId\"));",
+                  "    pm.expect(body.name).to.be.a(\"string\");",
+                  "    pm.expect(body.slug).to.be.a(\"string\");",
+                  "    pm.expect(body.price).to.be.a(\"number\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Products By Store - Success",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response is an array\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Products By Category - Success",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products?categoryPublicId={{categoryPublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "products"],
+              "query": [
+                {
+                  "key": "categoryPublicId",
+                  "value": "{{categoryPublicId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response is an array\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Product - Success",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Laptop\",\n  \"slug\": \"updated-laptop\",\n  \"description\": \"An even more powerful laptop\",\n  \"price\": 1299.99\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products/{{productPublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "products", "{{productPublicId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has updated product data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.name).to.eql(\"Updated Laptop\");",
+                  "    pm.expect(body.slug).to.eql(\"updated-laptop\");",
+                  "    pm.expect(body.price).to.eql(1299.99);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Product - Success",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/products/{{productPublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storePublicId}}", "products", "{{productPublicId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
                   "});"
                 ],
                 "type": "text/javascript"

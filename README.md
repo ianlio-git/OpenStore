@@ -1,4 +1,4 @@
-﻿# OpenStore
+# OpenStore
 
 OpenStore is a free, open-source, mobile-first, multi-tenant commerce platform.
 
@@ -100,35 +100,35 @@ A role is a permission template. Authorization must ultimately evaluate permissi
 
 ```text
 User
-├── TenantMemberships
-│   └── Tenant
-│       ├── Plan
-│       ├── Subscription
-│       ├── TenantSettings
-│       ├── TenantMemberships
-│       └── Stores
-│           ├── StoreMemberships
-│           ├── Categories
-│           ├── Products
-│           ├── Orders
-│           ├── Commissions
-│           └── Deliveries
-└── StoreMemberships
++-- TenantMemberships
+�   +-- Tenant
+�       +-- Plan
+�       +-- Subscription
+�       +-- TenantSettings
+�       +-- TenantMemberships
+�       +-- Stores
+�           +-- StoreMemberships
+�           +-- Categories
+�           +-- Products
+�           +-- Orders
+�           +-- Commissions
+�           +-- Deliveries
++-- StoreMemberships
 ```
 
 Example:
 
 ```text
 User: Ian
-├── Tenant: Lionetti Company
-│   ├── Tenant role: Owner
-│   ├── Store: Ian Clothing
-│   │   └── Store role: Administrator
-│   └── Store: Ian Footwear
-│       └── Store role: Administrator
-└── Tenant: Pedro's Business
-    └── Store: South Accessories
-        └── Store role: Seller
++-- Tenant: Lionetti Company
+�   +-- Tenant role: Owner
+�   +-- Store: Ian Clothing
+�   �   +-- Store role: Administrator
+�   +-- Store: Ian Footwear
+�       +-- Store role: Administrator
++-- Tenant: Pedro's Business
+    +-- Store: South Accessories
+        +-- Store role: Seller
 ```
 
 ---
@@ -147,7 +147,7 @@ Summary:
 - Entity Framework Core
 - PostgreSQL through Npgsql for runtime persistence
 - Npgsql
-- OpenAPI
+- Postman collection as the current API functional contract
 - YARP for the public gateway
 - RabbitMQ through the official .NET client when asynchronous messaging is justified
 - OpenTelemetry
@@ -190,11 +190,11 @@ The initial implementation is intentionally simple:
 - Feature code inside folders such as `src/OpenStore.Api/Tenancy`.
 - One `AppDbContext` at the beginning.
 - Generic Repository plus Unit of Work for repeated persistence code.
-- Generic Entity Service for simple CRUD.
+- EntityServiceBase for reusable persistence helpers in feature services.
 
 Do not create one API project per module during the MVP.
 Do not create separate Domain/Application/Infrastructure projects at the beginning.
-Do not create one `DbContext`, repository, or EF configuration class per module/entity until the code is large enough to justify it.
+Do not create one `DbContext` or repository per module/entity until the generic structure becomes insufficient. Keep EF entity mappings in feature-level `Persistence/` configuration classes.
 
 Target business modules:
 
@@ -248,10 +248,10 @@ Initial rules:
 - Keep HTTP controllers thin.
 - Put business behavior in services.
 - Use `IRepository<TEntity>` for repeated CRUD.
-- Use `IEntityService<TEntity>` for reusable CRUD service behavior.
+- Use `EntityServiceBase<TEntity>` as a base class for feature services with persistence helpers.
 - Use `IUnitOfWork` to save changes once per use case.
-- Keep simple EF mappings inside `AppDbContext.OnModelCreating`.
-- Extract repositories, EF configurations, or module projects only when they reduce real complexity.
+- Keep `AppDbContext.OnModelCreating` small; feature mappings live in `Persistence/` configuration classes.
+- Extract repositories or module projects only when they reduce real complexity.
 
 ---
 
@@ -262,7 +262,7 @@ Every private tenant-owned entity must implement `ITenantEntity`.
 ```csharp
 public interface ITenantEntity
 {
-    Guid TenantId { get; }
+    long TenantId { get; }
 }
 
 public abstract class BaseEntity
@@ -274,14 +274,16 @@ public abstract class BaseEntity
     public DateTimeOffset CreatedAtUtc { get; internal set; }
 
     public DateTimeOffset? UpdatedAtUtc { get; internal set; }
-}
 
-public abstract class BaseTenantEntity : BaseEntity, ITenantEntity
-{
-    public Guid TenantId { get; internal set; }
+    public bool IsActive { get; internal set; } = true;
+
+    public DateTimeOffset? DeletedAtUtc { get; internal set; }
+
+    public void MarkAsDeleted(DateTimeOffset utcNow) { ... }
+
+    public void Restore() { ... }
 }
 ```
-
 Mandatory rules:
 
 - Never trust a `TenantId` received in a request body.
@@ -388,24 +390,32 @@ OpenStore/
       Common/
         Contracts/
           IRepository.cs
-          IEntityService.cs
           IUnitOfWork.cs
           ITenantEntity.cs
           ICurrentUserContext.cs
           IDateTimeProvider.cs
+        Auth/
+          CurrentUserContext.cs
+          JwtSettings.cs
         Entities/
           BaseEntity.cs
-          BaseTenantEntity.cs
+
         Persistence/
           AppDbContext.cs
           Repository.cs
           UnitOfWork.cs
         Services/
-          EntityService.cs
+          EntityServiceBase.cs
         Time/
           SystemDateTimeProvider.cs
         Errors/
           GlobalExceptionHandler.cs
+          ModelValidationException.cs
+          OpenStoreException.cs
+          ProblemDetailsBuilder.cs
+        Validation/
+          RequiredGuidAttribute.cs
+          SlugAttribute.cs
 
       Tenancy/
         Controllers/
@@ -417,22 +427,53 @@ OpenStore/
         Models/
           Tenant.cs
           TenantMembership.cs
-        Validators/
-          TenantValidator.cs
         Dtos/
           CreateTenantRequest.cs
           CreateTenantResponse.cs
+        Exceptions/
+          DuplicateTenantSlugException.cs
+
+      Stores/
+        Controllers/
+          StoresController.cs
+        Services/
+          StoreService.cs
+        Contracts/
+          IStoreService.cs
+        Models/
+          Store.cs
+        Dtos/
+          CreateStoreRequest.cs
+          StoreResponse.cs
+          UpdateStoreRequest.cs
+        Exceptions/
+          DuplicateStoreSlugException.cs
+          StoreNotFoundException.cs
+          TenantNotFoundException.cs
+          TenantOwnerRequiredException.cs
 
   tests/
     OpenStore.Api.Tests/
       OpenStore.Api.Tests.csproj
+      Common/
+        Errors/
+          ModelValidationExceptionTests.cs
+          ProblemDetailsBuilderTests.cs
+        Services/
+          EntityServiceBaseTests.cs
+        Validation/
+          RequiredGuidAttributeTests.cs
+          SlugAttributeTests.cs
       Tenancy/
         Controllers/
           TenantsControllerTests.cs
         Services/
           TenantServiceTests.cs
-        Validators/
-          TenantValidatorTests.cs
+      Stores/
+        Controllers/
+          StoresControllerTests.cs
+        Services/
+          StoreServiceTests.cs
 
   postman/
     OpenStore.postman_collection.json
@@ -528,13 +569,13 @@ Reusable code should be extracted when:
 
 Reusable code must remain cohesive and easy to find.
 
-Do not create broad `Helper`, `Manager`, `Utils`, or shared domain packages just to remove a few lines of duplication. Prefer focused validators, value objects, mappers, policies, options, adapters, small application or domain services, generic repositories, generic entity services, Unit of Work, and reusable repository base classes when persistence code is repeated.
+Do not create broad `Helper`, `Manager`, `Utils`, or shared domain packages just to remove a few lines of duplication. Prefer focused validation attributes, value objects, mappers, policies, options, adapters, small application or domain services, generic repositories, EntityServiceBase, Unit of Work, and reusable repository base classes when persistence code is repeated.
 
 Generic repository reuse is allowed when it removes repeated CRUD plumbing. Repository methods should not call `SaveChangesAsync`; commit through `IUnitOfWork` so one use case can save several changes atomically.
 
-Generic entity service reuse is allowed for simple CRUD. Do not replace a feature-specific service, such as `TenantService`, when the operation has business rules.
+`EntityServiceBase<TEntity>` reuse is allowed for repeated persistence helpers. Do not replace a feature-specific service, such as `TenantService`, when the operation has business rules.
 
-Start with one `AppDbContext` and simple mappings inside `OnModelCreating`. Extract specific repositories or EF configuration classes only when the generic code becomes hard to read or insufficient.
+Use one `AppDbContext`. Keep entity mappings in feature-level `Persistence/` configuration classes and register them through `ModelBuilderConfigurationExtensions`.
 
 ---
 
@@ -550,7 +591,7 @@ A change is complete only when:
 - Authorization is verified.
 - External calls are abstracted and tested.
 - Exceptions follow the approved hierarchy.
-- Public contracts and OpenAPI are updated.
+- Public contracts, Postman requests, and response examples are updated.
 - Documentation is updated.
 - No secrets are committed.
 - Feature work is kept on the correct feature branch when Git workflow is used.

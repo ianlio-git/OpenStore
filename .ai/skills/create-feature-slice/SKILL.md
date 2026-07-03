@@ -1,6 +1,6 @@
 ---
 name: create-feature-slice
-description: Implement the first or next complete OpenStore vertical feature slice inside the modular monolith. Use for MVP work such as register user, create tenant, create store, create product, publish catalog, public catalog read, WhatsApp cart validation, invitations, roles, or any end-to-end feature that needs API, application service, domain model, persistence, tenant/store isolation, authorization, typed exceptions, OpenAPI, tests, and Postman functional requests without creating a new microservice or extra API project.
+description: Implement the first or next complete OpenStore vertical feature slice inside the modular monolith. Use for MVP work such as register user, create tenant, create store, create product, publish catalog, public catalog read, WhatsApp cart validation, invitations, roles, or any end-to-end feature that needs API, application service, domain model, persistence, tenant/store isolation, authorization, typed exceptions, tests, and Postman functional requests without creating a new microservice or extra API project.
 ---
 
 # Create Feature Slice
@@ -40,8 +40,8 @@ Infer missing details from README, ADRs, docs, and existing code when safe. Ask 
 8. Add or update application request and response contracts.
 9. Add or update the application service or use case.
 10. Add authorization and tenant/store ownership checks before accessing or mutating private data.
-11. Add or update infrastructure persistence, EF configuration, migrations, and dependency registrations.
-12. Add or update thin API endpoint mapping and OpenAPI metadata.
+11. Add or update infrastructure persistence: create an `IEntityTypeConfiguration<T>` class inside the feature's `Persistence/` folder, register it in `Common/Persistence/ModelBuilderConfigurationExtensions.ApplyOpenStoreConfigurations()`, and do not add `HasQueryFilter(x => x.IsActive)` (it is applied centrally).
+12. Add or update thin controller actions and Postman functional requests when HTTP behavior changes.
 13. Add explicit mapping methods; do not return EF entities from APIs.
 14. Add focused unit tests for application and domain behavior.
 15. Add PostgreSQL persistence tests when schema or query behavior changes.
@@ -88,8 +88,6 @@ Tenancy/
   Models/
     Tenant.cs
     TenantMembership.cs
-  Validators/
-    TenantValidator.cs
   Dtos/
     CreateTenantRequest.cs
     CreateTenantResponse.cs
@@ -101,16 +99,22 @@ Tests must mirror the production folder structure under `tests/OpenStore.Api.Tes
 
 Keep reusable generic code in `src/OpenStore.Api/Common/` only when it is useful across feature areas. Do not put feature-specific business rules in Common.
 
-Use one `AppDbContext` at the beginning. Put simple EF mappings directly in `AppDbContext.OnModelCreating`. Use `IEntityService<TEntity>` and `EntityService<TEntity>` for reusable CRUD above the repository. Do not create `TenancyDbContext`, `TenantRepository`, `TenantConfiguration`, or `TenantMembershipConfiguration` unless the generic structure becomes insufficient.
+Use one `AppDbContext` at the beginning. Put entity-specific EF mappings inside each feature's `Persistence/` folder in dedicated `IEntityTypeConfiguration<T>` classes. Register them in `ModelBuilderConfigurationExtensions.ApplyOpenStoreConfigurations()`. Soft-delete query filters are applied centrally - do not repeat per entity.
+
+Use `EntityServiceBase<TEntity>` as a base class for feature services that need persistence helpers. Common CRUD signatures live in `ICrudService<TResponse, TCreateRequest, TUpdateRequest>` and `IChildCrudService<TResponse, TCreateRequest, TUpdateRequest>` in `Common/Contracts`. Feature interfaces inherit these generic contracts and declare only feature-specific methods. `CreateAsync` normally returns the same response DTO used by `Get/Update` — create-specific DTOs are allowed only when they carry genuinely different data.
+
+There is no generic `IEntityService` - `Repository<T>` is the generic data access abstraction. Do not create `TenancyDbContext`, `TenantRepository`, or feature-specific DbContexts unless the generic structure becomes insufficient.
 
 ## Constraints
 
 - Do not create a new microservice unless an ADR-worthy independent boundary exists.
 - Do not create one API project per module during the MVP.
 - Do not create a service, module, or project for one table.
-- Use `IRepository<TEntity>`, `Repository<TEntity>`, `IEntityService<TEntity>`, `EntityService<TEntity>`, `IUnitOfWork`, `UnitOfWork`, and one `AppDbContext` for repeated CRUD.
+- Use `IRepository<TEntity>`, `Repository<TEntity>`, `IUnitOfWork`, `UnitOfWork`, `EntityServiceBase<TEntity>`, and one `AppDbContext` for repeated CRUD.
+- Feature service contracts inherit `ICrudService<TResponse, TCreateRequest, TUpdateRequest>` or `IChildCrudService<TResponse, TCreateRequest, TUpdateRequest>` from `Common/Contracts` and add only feature-specific methods.
+- `CreateAsync` normally returns the same response DTO used by `Get/Update`. A create-specific response DTO is allowed only when it contains genuinely different data.
 - Do not create a specific repository if the generic repository can solve the query clearly.
-- Do not replace feature-specific services with `EntityService<TEntity>` when the operation has business rules.
+- There is no generic `IEntityService` - feature services use `EntityServiceBase<TEntity>` as a base class or `IRepository<TEntity>` directly for data access.
 - Define a feature-specific service contract when a controller calls business logic, for example `ITenantService`.
 - Do not make methods, properties, or classes public just so tests can access them.
 - Keep implementation helpers private.

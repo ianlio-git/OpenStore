@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 using OpenStore.Api.Common.Contracts;
 using OpenStore.Api.Common.Errors;
 

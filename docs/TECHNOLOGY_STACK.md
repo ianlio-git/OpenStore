@@ -1,4 +1,4 @@
-﻿# Technology Stack
+# Technology Stack
 
 This document is the authoritative list of approved technologies for OpenStore.
 
@@ -18,7 +18,8 @@ Infrastructure operating rules are maintained in [`docs/INFRASTRUCTURE.md`](INFR
 | ORM | Entity Framework Core | Required |
 | Relational database | PostgreSQL | Required |
 | PostgreSQL provider | Npgsql | Required |
-| API description | OpenAPI | Required |
+| API functional contract | Postman collection | Required while there is no frontend |
+| API description | OpenAPI | Deferred until explicitly needed |
 | Gateway | YARP | Required when services are publicly routed |
 | Local orchestration | .NET Aspire AppHost | Preferred |
 | Self-hosted deployment | Docker and Compose | Future deployment path, not required for the current MVP test workflow |
@@ -37,13 +38,13 @@ OpenStore uses:
 - Dependency injection.
 - Explicit mapping.
 - Typed exceptions.
-- Explicit validation helpers or validators.
+- Attribute-driven validation with shared validation attributes.
 - Database per service.
+- Generic repository plus Unit of Work for repeated persistence plumbing.
 - Integration events only when asynchronous communication is justified.
 
 OpenStore does not use by default:
 
-- Generic repositories.
 - AutoMapper.
 - MediatR.
 - FluentValidation.

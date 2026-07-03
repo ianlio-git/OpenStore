@@ -1,279 +1,340 @@
 # Context Map
 
-This file is the compact working index for OpenStore.
+This file is the fast navigation map for OpenStore. Use it as a repo GPS before loading large context.
 
-Use it to reduce repeated context loading. It is a map, not the source of truth. When a task needs exact behavior, read the referenced files and code.
+It is not the source of truth. When exact behavior matters, read the referenced docs and code.
 
 ---
 
-## 1. Project Snapshot
+## 1. What OpenStore Is
 
-OpenStore is a mobile-first, multi-tenant commerce platform.
+OpenStore is a mobile-first, multi-tenant commerce API.
 
-Initial MVP:
+MVP direction:
 
 1. Register user.
 2. Create tenant.
 3. Create store.
-4. Create product.
-5. Publish store and product.
-6. Read public catalog.
-7. Build cart.
-8. Validate cart on backend.
-9. Generate WhatsApp cart URL.
-10. Prove tenant isolation.
+4. Create products/categories.
+5. Publish catalog.
+6. Build cart.
+7. Checkout through WhatsApp.
 
-Current state:
+Current shape:
 
-- CreateTenant feature implemented.
-- Dev JWT tokens generated via `scripts/create-dev-token.ps1` (HMACSHA256, no token endpoint).
-- Database schema created automatically via `EnsureCreatedAsync()` in Development mode.
-- Postman `baseUrl`: `https://localhost:5001`.
-- One API project `src/OpenStore.Api`, one test project `tests/OpenStore.Api.Tests`.
-- Common infrastructure: `IRepository<T>`, `Repository<T>`, `IUnitOfWork`, `UnitOfWork`, `IEntityService<T>`, `EntityService<T>`, `AppDbContext`.
-- Authentication: JWT Bearer with `ICurrentUserContext` abstraction (scoped, `IsAuthenticated` guard). Local dev tokens come from `scripts/create-dev-token.ps1`; production token issuing is deferred - see `AGENTS.md` section 2.1.
-- Entity properties use `internal set` for encapsulation.
-- Identity convention: `long Id` (database PK, auto-increment) + `Guid PublicId` (public API identifier, unique index). Tenancy entities fully refactored.
-- Exception model: single `OpenStoreException` class with `StatusCode` and `ErrorCode`.
-- All automated tests are unit tests using mocks/fakes. Integration tests with `WebApplicationFactory` are deferred.
-- Do not use `InternalsVisibleTo` or widen visibility for tests unless a concrete design need is explicitly approved.
+- ASP.NET Core API only. No frontend yet.
+- One solution: `OpenStore.sln`.
+- One API project: `src/OpenStore.Api`.
+- One test project: `tests/OpenStore.Api.Tests`.
+- Postman is the functional API testing surface.
+- PostgreSQL is the runtime database.
+- Development schema is created by `EnsureCreatedAsync()` for now.
 
 ---
 
-## 2. Read Order
-
-For most implementation tasks:
-
-1. `.ai/CONTEXT_MAP.md`
-2. `README.md`
-3. `AGENTS.md`
-4. `docs/PROJECT_STRUCTURE.md`
-5. `docs/ARCHITECTURE.md`
-6. Applicable `.ai/skills/**/SKILL.md`
-7. Target source and test files.
-
-Do not load every document when the task is narrow and the relevant route is clear.
-
----
-
-## 3. Key Documents
-
-| File | Use for |
-|---|---|
-| `README.md` | Product vision, MVP, domain concepts, definition of done. |
-| `AGENTS.md` | Mandatory AI rules and task workflow. |
-| `docs/PROJECT_STRUCTURE.md` | Initial source layout and where files belong. |
-| `docs/ARCHITECTURE.md` | Simple API architecture, request flow, repository, entity service, Unit of Work, AppDbContext. |
-| `docs/TECHNOLOGY_STACK.md` | Approved technologies and forbidden defaults. |
-| `docs/TESTING_STRATEGY.md` | Unit, integration, tenant isolation, adapter, and workflow tests. |
-| `docs/POSTMAN_FUNCTIONAL_TESTING.md` | Postman collection rules while there is no frontend. |
-| `docs/GIT_WORKFLOW.md` | Feature branch, small commit, and PR readiness rules. |
-| `.ai/README.md` | How to invoke and combine AI skills. |
-| `.ai/agent-startup/` | Short startup routines for Codex, OpenCode, Antigravity CLI, and generic agents. |
-
----
-
-## 4. Planned Source Layout
-
-Create this only when the first feature is implemented:
+## 2. Current Structure
 
 ```text
-OpenStore.sln
-Directory.Build.props
-Directory.Packages.props
+src/OpenStore.Api/
+  Program.cs
 
-src/
-  OpenStore.Api/
-    OpenStore.Api.csproj
-    Program.cs
+  Common/
+    Auth/
+    Contracts/
+    Entities/
+    Errors/
+    Persistence/
+    Services/
+    Time/
+    Validation/
 
-    Common/
-      Contracts/
-        IRepository.cs
-        IEntityService.cs
-        IUnitOfWork.cs
-        ITenantEntity.cs
-        ICurrentUserContext.cs
-        IDateTimeProvider.cs
-      Entities/
-        BaseEntity.cs
-        BaseTenantEntity.cs
-      Persistence/
-        AppDbContext.cs
-        Repository.cs
-        UnitOfWork.cs
-      Auth/
-        CurrentUserContext.cs
-        JwtSettings.cs
-      Services/
-        EntityService.cs
-      Time/
-        SystemDateTimeProvider.cs
-      Errors/
-        GlobalExceptionHandler.cs
-        OpenStoreException.cs
+  Tenancy/
+    Controllers/
+    Contracts/
+    Dtos/
+    Exceptions/
+    Models/
+    Services/
 
-    Tenancy/
-      Controllers/
-        TenantsController.cs
-      Services/
-        TenantService.cs
-      Contracts/
-        ITenantService.cs
-      Models/
-        Tenant.cs
-        TenantMembership.cs
-      Validators/
-        TenantValidator.cs
-      Dtos/
-        CreateTenantRequest.cs
-        CreateTenantResponse.cs
-      Exceptions/
-        DuplicateTenantSlugException.cs
-        TenantNameValidationException.cs
-        TenantSlugValidationException.cs
+  Categories/
+    Controllers/
+    Contracts/
+    Dtos/
+    Exceptions/
+    Models/
+    Services/
 
-tests/
-  OpenStore.Api.Tests/
-    OpenStore.Api.Tests.csproj
-    Tenancy/
-      Controllers/
-        TenantsControllerTests.cs
-      Services/
-        TenantServiceTests.cs
-      Validators/
-        TenantValidatorTests.cs
+  Products/
+    Controllers/
+    Contracts/
+    Dtos/
+    Exceptions/
+    Models/
+    Services/
+
+  Stores/
+    Controllers/
+    Contracts/
+    Dtos/
+    Exceptions/
+    Models/
+    Services/
+
+tests/OpenStore.Api.Tests/
+  Common/
+  Tenancy/
+  Categories/
+  Products/
+  Stores/
 
 postman/
   OpenStore.postman_collection.json
-  environments/
-    local.postman_environment.json
+  environments/local.postman_environment.json
 ```
 
-Do not create:
-
-- `OpenStore.Common.csproj`
-- `Modules/`
-- Domain/Application/Infrastructure projects
-- `TenancyDbContext`
-- `TenantRepository`
-- `TenantConfiguration`
-- `TenantMembershipConfiguration`
-- frontend
-- Aspire
-- ServiceDefaults
-- gateway
-- messaging
+Feature folders own their HTTP contracts, service contract, service implementation, models, DTOs, and business exceptions.
 
 ---
 
-## 5. Architecture Guardrails
+## 3. Feature Folder Pattern
 
-- Start with the smallest complete vertical slice.
-- Keep a single root solution named `OpenStore.sln`.
-- Keep one root `Directory.Build.props`.
-- Keep one root `Directory.Packages.props` for central NuGet versions.
-- Keep one API project named `src/OpenStore.Api/OpenStore.Api.csproj`.
-- Keep one test project named `tests/OpenStore.Api.Tests/OpenStore.Api.Tests.csproj`.
-- Tests mirror the production folder structure under `tests/OpenStore.Api.Tests`.
-- Test files and classes end with `Tests`.
-- Put reusable code under `src/OpenStore.Api/Common/`.
-- Put Tenancy code under `src/OpenStore.Api/Tenancy/` using `Controllers`, `Services`, `Contracts`, `Models`, and `Dtos`.
-- Use `IRepository<TEntity>`, `Repository<TEntity>`, `IEntityService<TEntity>`, `EntityService<TEntity>`, `IUnitOfWork`, `UnitOfWork`, and one `AppDbContext`.
-- Register open generic repositories through dependency injection.
-- Register open generic entity services through dependency injection.
-- Do not create a repository per entity unless the generic repository cannot express the query clearly.
-- Do not replace feature-specific services with `EntityService<TEntity>` when business rules exist.
-- Do not make implementation members public for tests.
-- Keep implementation helpers internal; test them through the public contract of the service that uses them.
-- Unit tests should use interfaces, mocks, or fakes and verify behavior through public contracts.
-- Interface members must not include redundant public modifiers.
-- Entity properties use `internal set` (narrowest that works with single-project architecture: EF Core, service layer, and AppDbContext are all in the same assembly).
-- `InternalsVisibleTo` is only for `WebApplicationFactory<Program>` - do not add it for testing internal types.
-- Use `ICurrentUserContext` (registered as scoped) to resolve the authenticated user; check `IsAuthenticated` before reading claims in endpoints.
-- Authentication uses JWT Bearer with `UseAuthentication` and `UseAuthorization` middleware in the correct order.
-- Exceptions: single concrete `OpenStoreException` with `StatusCode`. No intermediate abstract layers. Handler reads `StatusCode` to map to Problem Details.
-- Controllers extend `ControllerBase` with `[ApiController]` and `[Route]` attributes. Register with `AddControllers()`/`MapControllers()`.
-- `Program.cs` uses Npgsql exclusively.
-- Put simple EF mappings inside `AppDbContext.OnModelCreating`.
-- Do not create EF configuration classes until `OnModelCreating` becomes hard to read.
-- Do not trust `TenantId` or `StoreId` from request bodies.
-- Add negative cross-tenant tests for tenant-owned behavior.
-- Add or update Postman requests for changed HTTP endpoints.
-- Use one feature branch per feature and small coherent commits when committing is requested.
-
----
-
-## 6. First Recommended Task
-
-Recommended prompt:
+Use `Stores` as the current reference implementation.
 
 ```text
-Follow .ai/agent-startup/opencode.md.
-Use create-feature-slice to implement CreateTenant.
-
-Use the simple initial structure:
-- One solution: OpenStore.sln.
-- One Directory.Build.props at the root.
-- One Directory.Packages.props at the root for central NuGet versions.
-- One API project: src/OpenStore.Api.
-- One test project: tests/OpenStore.Api.Tests.
-- Common/Contracts for interfaces.
-- Common/Entities for base entity classes.
-- Common/Persistence for AppDbContext, Repository, and UnitOfWork.
-- Common/Services for EntityService.
-- Tenancy/Controllers for TenantsController.
-- Tenancy/Services for TenantService.
-- Tenancy/Contracts for ITenantService.
-- Tenancy/Models for Tenant and TenantMembership.
-- Tenancy/Validators for TenantValidator.
-- Tenancy/Dtos for CreateTenantRequest and CreateTenantResponse.
-- Tests mirror the source structure under tests/OpenStore.Api.Tests.
-- Test files must end with Tests.cs.
-
-Use IRepository<TEntity>, Repository<TEntity>, IEntityService<TEntity>, EntityService<TEntity>, IUnitOfWork, UnitOfWork, and AppDbContext.
-Do not create TenancyDbContext.
-Do not create TenantRepository unless the generic repository cannot solve the query.
-Do not create TenantConfiguration or TenantMembershipConfiguration unless AppDbContext mapping becomes too large.
-Do not create Domain/Application/Infrastructure projects.
-Do not remove TenantService from CreateTenant; use it to coordinate business rules and UnitOfWork.
-Controllers should depend on ITenantService.
-Show the planned file structure before creating files.
+Stores/
+  Controllers/
+    StoresController.cs       # HTTP only
+  Contracts/
+    IStoreService.cs          # Controller-facing service contract
+  Dtos/
+    CreateStoreRequest.cs     # API input
+    UpdateStoreRequest.cs     # API input
+    StoreResponse.cs          # Read/update output
+  Exceptions/
+    DuplicateStoreSlugException.cs
+    StoreNotFoundException.cs
+    TenantNotFoundException.cs
+    TenantOwnerRequiredException.cs
+  Models/
+    Store.cs                  # EF entity / business model
+  Services/
+    StoreService.cs           # Business rules and use-case flow
 ```
+
+Tests mirror source folders:
+
+```text
+tests/OpenStore.Api.Tests/Stores/
+  Controllers/StoresControllerTests.cs
+  Services/StoreServiceTests.cs
+```
+
+When adding a feature, copy this shape first. Do not invent new folders unless there is a clear reason.
 
 ---
 
-## 7. Standard Commands
+## 4. Read These First
+
+For most feature work, read in this order:
+
+1. `.ai/CONTEXT_MAP.md`
+2. `docs/ARCHITECTURE.md`
+3. `docs/PROJECT_STRUCTURE.md`
+4. `.ai/skills/create-feature-slice/SKILL.md`
+5. Reference feature source, usually `src/OpenStore.Api/Stores/`
+6. Reference feature tests, usually `tests/OpenStore.Api.Tests/Stores/`
+7. `postman/OpenStore.postman_collection.json` when endpoints change
+
+For validation/error changes, read:
+
+- `src/OpenStore.Api/Common/Validation/`
+- `src/OpenStore.Api/Common/Errors/`
+- `src/OpenStore.Api/Program.cs`
+- `src/OpenStore.Api/Common/Persistence/AppDbContext.cs`
+
+For persistence changes, read:
+
+- `src/OpenStore.Api/Common/Persistence/AppDbContext.cs`
+- `src/OpenStore.Api/Common/Persistence/Repository.cs`
+- `src/OpenStore.Api/Common/Persistence/UnitOfWork.cs`
+- `src/OpenStore.Api/Common/Persistence/ModelBuilderConfigurationExtensions.cs`
+- `src/OpenStore.Api/Common/Persistence/SoftDeleteModelBuilderExtensions.cs`
+- affected model files and their feature's `Persistence/` configuration class
+
+---
+
+## 5. Architecture Rules
+
+Keep the architecture small and explicit:
+
+- Controllers handle HTTP only.
+- Controllers depend on feature contracts (`IStoreService`, `ITenantService`).
+- Services own business rules, authorization checks, mapping, and use-case flow.
+- Repositories do generic data access only.
+- `UnitOfWork` saves changes.
+- `AppDbContext` owns EF mappings, entity metadata, and entity validation before save.
+- `EntityServiceBase<TEntity>` is only a base class for feature services with persistence helpers.
+- There is no generic `IEntityService<TEntity>` or concrete `EntityService<TEntity>`.
+- Common CRUD signatures live in generic contracts: `ICrudService<TResponse, TCreateRequest, TUpdateRequest>` for root entities, `IChildCrudService<TResponse, TCreateRequest, TUpdateRequest>` for child entities.
+- Feature interfaces inherit those generic contracts and declare only feature-specific methods.
+- `CreateAsync` normally returns the same response DTO used by `Get/Update`. Create-specific DTOs are allowed only when they carry genuinely different data.
+- Do not expose EF entities from APIs.
+- Public API uses `PublicId`, slugs, or public identifiers. Do not expose internal numeric `Id`.
+- Persisted entities use `long Id` as internal PK and `Guid PublicId` as public identifier.
+- Tenant/store IDs from request bodies are not trusted.
+- Field validation is attribute-based: `[Required]`, `[StringLength]`, `[Slug]`, `[RequiredGuid]`.
+- API validation converts ModelState into `ModelValidationException` in `Program.cs`.
+- Entity validation runs in `AppDbContext` before save.
+- Business errors use typed exceptions that extend `OpenStoreException`.
+- Validation errors use `ModelValidationException` with field-level `errors`.
+- Soft delete is built into `BaseEntity`: `IsActive`, `DeletedAtUtc`, `MarkAsDeleted(utcNow)`, `Restore()`.
+- Soft-delete query filters are applied centrally via `ApplySoftDeleteQueryFilters()`, not per-entity `HasQueryFilter`.
+- Entity Fluent API mappings live in feature-level `IEntityTypeConfiguration<T>` classes inside each feature's `Persistence/` folder.
+- `AppDbContext.OnModelCreating` applies configurations via `modelBuilder.ApplyOpenStoreConfigurations()`.
+- New entities must create an `IEntityTypeConfiguration<T>` inside their feature folder and register it in `ModelBuilderConfigurationExtensions`.
+
+---
+
+## 6. Do Not Do This
+
+Do not add these without explicit approval:
+
+- New API projects.
+- Domain/Application/Infrastructure split.
+- Microservices.
+- `Modules/` folder.
+- One DbContext per feature.
+- One repository per entity when `IRepository<TEntity>` is enough.
+- EF configuration files before `AppDbContext.OnModelCreating` becomes hard to read.
+- Generic CRUD/ABM framework with request/response generics.
+- Recreating `IEntityService<TEntity>` or `EntityService<TEntity>`.
+- Recreating `BaseTenantEntity` or `ISoftDeleteEntity`.
+- Adding create-specific response DTOs when the normal response DTO carries the same data.
+- Recreating `TenantValidator`, `StoreValidator`, `SlugValidator`, or `ModelValidator`.
+- Field-specific validation exceptions like `StoreNameValidationException`.
+- `WebApplicationFactory`, SQLite, Docker, or Testcontainers unless explicitly requested.
+- Public setters or public helpers only for tests.
+- `InternalsVisibleTo` for testing internal implementation details.
+- Repeating `HasQueryFilter(x => x.IsActive)` per entity configuration.
+- Adding entity mappings directly inside `AppDbContext.OnModelCreating`.
+
+---
+
+## 7. How To Add A New Feature
+
+Use `Stores` as the working template.
+
+1. Pick the owning feature folder, for example `Products/` or `Categories/`.
+2. Create the standard folders:
+
+```text
+<Feature>/
+  Controllers/
+  Contracts/
+  Dtos/
+  Exceptions/
+  Models/
+  Services/
+```
+
+3. Add a feature service contract, for example `IProductService`.
+4. Add a feature service, for example `ProductService`.
+5. Inherit `EntityServiceBase<TEntity>` only if persistence helpers are useful.
+6. Keep business rules explicit in the feature service.
+7. Use DTO attributes for common field validation.
+8. Create an `IEntityTypeConfiguration<T>` class inside the feature's `Persistence/` folder and register it in `ModelBuilderConfigurationExtensions.ApplyOpenStoreConfigurations()`.
+9. Register the concrete feature service in `Program.cs`.
+10. Add tests under the mirrored test folder.
+11. Add or update Postman requests.
+12. Update docs/context map only if structure, commands, or public behavior changed.
+
+For feature implementation details, follow `.ai/skills/create-feature-slice/SKILL.md`.
+
+---
+
+## 8. Categories and Products Reference
+
+Categories and Products follow the same pattern as Stores.
+
+| Aspect | Categories | Products |
+|--------|-----------|----------|
+| Route prefix | `api/stores/{storePublicId}/categories` | `api/stores/{storePublicId}/products` |
+| Service base | `EntityServiceBase<Category>` | `EntityServiceBase<Product>` |
+| Tenant-owned via | `Store.TenantId` | `Store.TenantId` |
+| Soft delete | Yes (`BaseEntity`) | Yes (`BaseEntity`) |
+| Slug scope | Unique per store (StoreId+Slug) | Unique per store (StoreId+Slug) |
+| Category assignment | N/A | Optional `CategoryId` (nullable FK) |
+| Cross-store access? | Throws not-found | Throws not-found |
+
+Reference source files:
+
+- `src/OpenStore.Api/Categories/`
+- `src/OpenStore.Api/Products/`
+- `tests/OpenStore.Api.Tests/Categories/`
+- `tests/OpenStore.Api.Tests/Products/`
+
+## 9. Stores Reference Checklist
+
+Before adding another tenant/store-owned feature, inspect:
+
+- `src/OpenStore.Api/Stores/Controllers/StoresController.cs`
+- `src/OpenStore.Api/Stores/Contracts/IStoreService.cs`
+- `src/OpenStore.Api/Stores/Services/StoreService.cs`
+- `src/OpenStore.Api/Stores/Models/Store.cs`
+- `src/OpenStore.Api/Stores/Dtos/`
+- `src/OpenStore.Api/Stores/Exceptions/`
+- `tests/OpenStore.Api.Tests/Stores/Controllers/StoresControllerTests.cs`
+- `tests/OpenStore.Api.Tests/Stores/Services/StoreServiceTests.cs`
+
+Pay attention to:
+
+- Tenant lookup by `Tenant.PublicId`.
+- Authorization through `ICurrentUserContext` and tenant membership.
+- Slug uniqueness inside tenant scope.
+- Public IDs in API responses and routes.
+- Soft delete behavior.
+- Unit tests with mocks/fakes, not integration infrastructure.
+
+---
+
+## 10. Validation Commands
+
+Run from repo root:
 
 ```powershell
 # Build
 dotnet build OpenStore.sln
 
-# Run all tests
-dotnet test tests/OpenStore.Api.Tests/
+# Tests
+dotnet test OpenStore.sln
 
 # Run API locally
 dotnet run --project src/OpenStore.Api
 
-# Generate a dev JWT
+# Generate local dev JWT
 scripts/create-dev-token.ps1
-
-# Generate a dev JWT with a specific user ID
-scripts/create-dev-token.ps1 -UserId "00000000-0000-0000-0000-000000000001"
-
-# Add NuGet package
-dotnet add src/OpenStore.Api/OpenStore.Api.csproj package <PackageName>
 ```
+
+Postman local base URL:
+
+```text
+https://localhost:5001
+```
+
+If schema changed while using `EnsureCreatedAsync()`, recreate the local development database before manual Postman testing.
 
 ---
 
-## 8. Maintenance Rules
+## 11. Keep This Map Fresh
 
-Update this file when:
+Update this file only when one of these changes:
 
-- A new important folder or entry point is created.
-- A command becomes the standard way to build, test, run, migrate, or deploy.
-- A major architecture, infrastructure, testing, or skill decision changes.
-- A folder is moved or renamed.
+- Repo structure.
+- Standard commands.
+- Feature folder pattern.
+- Architecture rules.
+- Validation/error strategy.
+- Testing strategy.
+- Current reference feature.
 
-Keep updates concise. Prefer links and summaries over copied content.
+Keep it short, practical, and actionable.

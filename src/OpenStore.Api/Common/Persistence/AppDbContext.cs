@@ -1,7 +1,12 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using OpenStore.Api.Common.Contracts;
 using OpenStore.Api.Common.Entities;
+using OpenStore.Api.Common.Errors;
+using OpenStore.Api.Categories.Models;
+using OpenStore.Api.Products.Models;
+using OpenStore.Api.Stores.Models;
 using OpenStore.Api.Tenancy.Models;
 
 namespace OpenStore.Api.Common.Persistence;
@@ -15,62 +20,78 @@ public sealed class AppDbContext : DbContext
         _dateTimeProvider = dateTimeProvider;
     }
 
+    private void PrepareEntitiesToSave()
+    {
+        DateTimeOffset utcNow = _dateTimeProvider.UtcNow;
+
+        foreach (EntityEntry<BaseEntity> entry in GetChangedEntries<BaseEntity>())
+        {
+            if (entry.State is EntityState.Added)
+            {
+                PrepareAddedEntity(entry.Entity, utcNow);
+            }
+            else
+            {
+                PrepareModifiedEntity(entry.Entity, utcNow);
+            }
+        }
+    }
+
+    private static void PrepareAddedEntity(BaseEntity entity, DateTimeOffset utcNow)
+    {
+        if (entity.PublicId == Guid.Empty)
+        {
+            entity.PublicId = Guid.NewGuid();
+        }
+
+        entity.CreatedAtUtc = utcNow;
+    }
+
+    private static void PrepareModifiedEntity(BaseEntity entity, DateTimeOffset utcNow) => entity.UpdatedAtUtc = utcNow;
+
+    private void ValidateChangedEntities()
+    {
+        List<ValidationResult> results = [];
+
+        IEnumerable<object> entitiesToValidate = GetChangedEntries<object>().Select(entry => entry.Entity);
+
+        foreach (object entity in entitiesToValidate)
+        {
+            ValidationContext context = new(entity);
+            Validator.TryValidateObject(entity, context, results, validateAllProperties: true);
+        }
+
+        if (results.Count > 0)
+        {
+            throw ModelValidationException.FromValidationResults(results);
+        }
+    }
+
+    private IEnumerable<EntityEntry<T>> GetChangedEntries<T>() where T : class => ChangeTracker.Entries<T>().Where(entry => entry.State is EntityState.Added or EntityState.Modified);
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyOpenStoreConfigurations();
+        modelBuilder.ApplySoftDeleteQueryFilters();
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        PrepareEntitiesToSave();
+        ValidateChangedEntities();
+
+        int result = await base.SaveChangesAsync(cancellationToken);
+
+        return result;
+    }
+
     public DbSet<Tenant> Tenants => Set<Tenant>();
 
     public DbSet<TenantMembership> TenantMemberships => Set<TenantMembership>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Tenant>(entity =>
-        {
-            entity.HasKey(t => t.Id);
-            entity.Property(t => t.Id).ValueGeneratedOnAdd();
-            entity.Property(t => t.PublicId).IsRequired();
-            entity.Property(t => t.Name).HasMaxLength(200).IsRequired();
-            entity.Property(t => t.Slug).HasMaxLength(100).IsRequired();
-            entity.HasIndex(t => t.Slug).IsUnique();
-            entity.HasIndex(t => t.PublicId).IsUnique();
-        });
+    public DbSet<Store> Stores => Set<Store>();
 
-        modelBuilder.Entity<TenantMembership>(entity =>
-        {
-            entity.HasKey(tm => tm.Id);
-            entity.Property(tm => tm.Id).ValueGeneratedOnAdd();
-            entity.Property(tm => tm.PublicId).IsRequired();
-            entity.Property(tm => tm.Role).HasMaxLength(50).IsRequired();
-            entity.HasIndex(tm => new { tm.TenantId, tm.UserId }).IsUnique();
+    public DbSet<Category> Categories => Set<Category>();
 
-            entity.HasOne<Tenant>().WithMany().HasForeignKey(tm => tm.TenantId).OnDelete(DeleteBehavior.Restrict);
-        });
-    }
-
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        DateTimeOffset utcNow = _dateTimeProvider.UtcNow;
-
-        IEnumerable<EntityEntry<BaseEntity>> entries = ChangeTracker.Entries<BaseEntity>().Where(entry => entry.State is EntityState.Added or EntityState.Modified);
-
-        foreach (EntityEntry<BaseEntity> entry in entries)
-        {
-            BaseEntity baseEntity = entry.Entity;
-
-            switch (entry.State)
-            {
-                case EntityState.Added:
-                    if (baseEntity.PublicId == Guid.Empty)
-                    {
-                        baseEntity.PublicId = Guid.NewGuid();
-                    }
-
-                    baseEntity.CreatedAtUtc = utcNow;
-                    break;
-
-                case EntityState.Modified:
-                    baseEntity.UpdatedAtUtc = utcNow;
-                    break;
-            }
-        }
-
-        return base.SaveChangesAsync(cancellationToken);
-    }
+    public DbSet<Product> Products => Set<Product>();
 }

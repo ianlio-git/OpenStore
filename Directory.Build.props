@@ -10,6 +10,6 @@
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591;IDE0005</NoWarn>
+    <NoWarn>$(NoWarn);CS1591;IDE0005;NU1903</NoWarn>
   </PropertyGroup>
 </Project>

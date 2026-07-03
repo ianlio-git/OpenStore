@@ -1,4 +1,4 @@
-﻿# Backend Change Checklist
+# Backend Change Checklist
 
 - [ ] Owning service identified.
 - [ ] Feature branch identified or created when Git workflow is requested.
@@ -28,7 +28,7 @@
 - [ ] Integration tests pass.
 - [ ] Postman request added or updated for changed HTTP endpoints.
 - [ ] Postman examples use environment variables and no real secrets.
-- [ ] Documentation and OpenAPI updated.
+- [ ] Documentation, Postman requests, and response examples updated when HTTP behavior changes.
 - [ ] `.ai/CONTEXT_MAP.md` updated when structure, entry points, standard commands, or important decisions changed.
 - [ ] Commits are small and coherent when commits are requested.
 - [ ] No unrelated files included in commits.

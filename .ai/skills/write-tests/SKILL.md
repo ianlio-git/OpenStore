@@ -1,4 +1,4 @@
-﻿---
+---
 name: write-tests
 description: Create or improve OpenStore xUnit.net v3 unit, integration, persistence, API, external adapter, authorization, tenant isolation, workflow, or exception mapping tests. Use when behavior needs test coverage, a bug needs regression tests, or a feature is incomplete without required success, failure, authorization, cross-tenant, cancellation, and dependency-failure coverage.
 ---
@@ -64,13 +64,13 @@ tests/OpenStore.Api.Tests/Tenancy/Services/TenantServiceTests.cs
 ```
 
 ```text
-src/OpenStore.Api/Tenancy/Validators/TenantValidator.cs
-tests/OpenStore.Api.Tests/Tenancy/Validators/TenantValidatorTests.cs
+src/OpenStore.Api/Common/Validation/SlugAttribute.cs
+tests/OpenStore.Api.Tests/Common/Validation/SlugAttributeTests.cs
 ```
 
 ```text
-src/OpenStore.Api/Tenancy/Validators/TenantValidator.cs
-tests/OpenStore.Api.Tests/Tenancy/Validators/TenantValidatorTests.cs
+src/OpenStore.Api/Common/Validation/RequiredGuidAttribute.cs
+tests/OpenStore.Api.Tests/Common/Validation/RequiredGuidAttributeTests.cs
 ```
 
 Namespaces follow the same logical path, replacing `OpenStore.Api` with `OpenStore.Api.Tests`.

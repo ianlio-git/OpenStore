@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using OpenStore.Api.Common.Errors;
 
 namespace OpenStore.Api.Tenancy.Exceptions;
