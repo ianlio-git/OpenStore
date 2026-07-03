@@ -80,12 +80,22 @@ src/OpenStore.Api/
     Models/
     Services/
 
+  Cart/
+    Controllers/
+    Contracts/
+    Dtos/
+    Exceptions/
+    Models/
+    Persistence/
+    Services/
+
 tests/OpenStore.Api.Tests/
   Common/
   Tenancy/
   Categories/
   Products/
   Stores/
+  Cart/
 
 postman/
   OpenStore.postman_collection.json
@@ -285,6 +295,20 @@ Before adding another tenant/store-owned feature, inspect:
 - `src/OpenStore.Api/Stores/Exceptions/`
 - `tests/OpenStore.Api.Tests/Stores/Controllers/StoresControllerTests.cs`
 - `tests/OpenStore.Api.Tests/Stores/Services/StoreServiceTests.cs`
+
+### Cart
+
+Cart is anonymous (no auth), scoped under a store. CartItem belongs to Cart and points to a Product with snapshotted pricing.
+
+- `src/OpenStore.Api/Cart/Controllers/CartsController.cs`
+- `src/OpenStore.Api/Cart/Contracts/ICartService.cs`
+- `src/OpenStore.Api/Cart/Services/CartService.cs`
+- `src/OpenStore.Api/Cart/Models/Cart.cs`
+- `src/OpenStore.Api/Cart/Models/CartItem.cs`
+- `src/OpenStore.Api/Cart/Dtos/`
+- `src/OpenStore.Api/Cart/Exceptions/`
+- `tests/OpenStore.Api.Tests/Cart/Controllers/CartsControllerTests.cs`
+- `tests/OpenStore.Api.Tests/Cart/Services/CartServiceTests.cs`
 
 Pay attention to:
 

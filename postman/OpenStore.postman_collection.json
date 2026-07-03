@@ -1184,6 +1184,316 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "Create Cart - Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/carts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "carts"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"response has cart data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.publicId).to.be.a(\"string\");",
+                  "    pm.expect(body.storePublicId).to.eql(pm.environment.get(\"storePublicId\"));",
+                  "    pm.expect(body.items).to.be.an(\"array\");",
+                  "    pm.expect(body.total).to.eql(0);",
+                  "    pm.expect(body.createdAtUtc).to.be.a(\"string\");",
+                  "});",
+                  "",
+                  "",
+                  "pm.environment.set(\"cartPublicId\", pm.response.json().publicId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Cart - Empty",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/carts/{{cartPublicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "carts",
+                "{{cartPublicId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has cart data\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.publicId).to.eql(pm.environment.get(\"cartPublicId\"));",
+                  "    pm.expect(body.storePublicId).to.eql(pm.environment.get(\"storePublicId\"));",
+                  "    pm.expect(body.items).to.be.an(\"array\");",
+                  "    pm.expect(body.total).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Item - Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productPublicId\": \"{{productPublicId}}\",\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/carts/{{cartPublicId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "carts",
+                "{{cartPublicId}}",
+                "items"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has items\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.items).to.be.an(\"array\");",
+                  "    pm.expect(body.items.length).to.be.at.least(1);",
+                  "    pm.expect(body.total).to.be.above(0);",
+                  "});",
+                  "",
+                  "",
+                  "if (pm.response.json().items.length > 0) {",
+                  "    pm.environment.set(\"cartItemPublicId\", pm.response.json().items[0].publicId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Cart - With Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/carts/{{cartPublicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "carts",
+                "{{cartPublicId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has items and total\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.items).to.be.an(\"array\");",
+                  "    pm.expect(body.items.length).to.be.at.least(1);",
+                  "    pm.expect(body.total).to.be.above(0);",
+                  "    pm.expect(body.items[0].productName).to.be.a(\"string\");",
+                  "    pm.expect(body.items[0].quantity).to.be.a(\"number\");",
+                  "    pm.expect(body.items[0].subtotal).to.be.a(\"number\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Item Quantity - Success",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/carts/{{cartPublicId}}/items/{{cartItemPublicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "carts",
+                "{{cartPublicId}}",
+                "items",
+                "{{cartItemPublicId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response has updated quantity\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.items).to.be.an(\"array\");",
+                  "    pm.expect(body.items.length).to.be.at.least(1);",
+                  "    pm.expect(body.items[0].quantity).to.eql(5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove Item - Success",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storePublicId}}/carts/{{cartPublicId}}/items/{{cartItemPublicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storePublicId}}",
+                "carts",
+                "{{cartPublicId}}",
+                "items",
+                "{{cartItemPublicId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

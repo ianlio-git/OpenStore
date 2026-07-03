@@ -94,4 +94,8 @@ public sealed class AppDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
 
     public DbSet<Product> Products => Set<Product>();
+
+    public DbSet<Cart.Models.Cart> Carts => Set<Cart.Models.Cart>();
+
+    public DbSet<Cart.Models.CartItem> CartItems => Set<Cart.Models.CartItem>();
 }
